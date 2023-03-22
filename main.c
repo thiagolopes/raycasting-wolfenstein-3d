@@ -9,13 +9,15 @@
 
 #define PI M_PI
 #define PI2 M_PI_2
-#define PI3 3*PI/2
+#define PI3 3 * PI / 2
+
+#define ONE_RAD M_PI / 180
 
 int mapX = 8, mapY = 8, mapS = 64;
 int map[] = {
     1, 1, 1, 1, 1, 1, 1, 1,
     1, 0, 1, 0, 0, 0, 0, 1,
-    1, 0, 1, 0, 0, 0, 0, 1,
+    1, 0, 1, 0, 0, 1, 0, 1,
     1, 0, 1, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 1, 0, 1,
@@ -23,10 +25,8 @@ int map[] = {
     1, 1, 1, 1, 1, 1, 1, 1,
 };
 
-
-float dist(float ax, float ay, float bx, float by, float angle)
-{
-  return sqrt((bx-ax) * (bx - ax) + (by - ay) * (by-ay));
+float dist(float ax, float ay, float bx, float by, float angle) {
+  return sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
 }
 
 void drawMap2D() {
@@ -34,19 +34,19 @@ void drawMap2D() {
   for (int y = 0; y < mapY; y++) {
     for (int x = 0; x < mapX; x++) {
       if (map[y * mapX + x]) {
-        glColor3f(1, 0, 1);
+        glColor3f(1, 1, 1);
       } else {
-        glColor3f(0, 0, 1);
+        glColor3f(0, 0, 0);
       }
 
       int xo = x * mapS;
       int yo = y * mapS;
 
       glBegin(GL_QUADS);
-      glVertex2i(xo + 1, yo + 1);
-      glVertex2i(xo + 1, yo + mapS - 1);
-      glVertex2i(xo + mapS - 1, yo + mapS - 1);
-      glVertex2i(xo + mapS - 1, yo + 1);
+      glVertex2i(xo, yo);
+      glVertex2i(xo, yo + mapS);
+      glVertex2i(xo + mapS, yo + mapS);
+      glVertex2i(xo + mapS, yo);
       glEnd();
     }
   }
@@ -107,14 +107,21 @@ void handlerKeyPressed(unsigned char key, int x, int y) {
 void drawRays2D() {
   /* N>>6 is equal N/64 (because 2^6=64) */
   int r, mx, my, mp, dof;
-  float rx, ry, ra, xo, yo;
+  float rx, ry, ra, xo, yo, distT;
 
-  ra = player.angle;
+  ra = player.angle - (30 * ONE_RAD);
 
-  for (r = 0; r < 1; r++) {
+  for (r = 0; r < 60; r++) {
+    /* normalize ray angle*/
+    if (ra < 0) {
+      ra += 2 * PI;
+    } else if (ra > 2 * PI) {
+      ra -= 2 * PI;
+    }
+
     /* horizontal  */
     dof = 0;
-    float distH=1000000, hx=player.x, hy=player.y;
+    float distH = 1000000, hx = player.x, hy = player.y;
     float aTan = -1 / tan(ra);
 
     if (ra > PI) {
@@ -122,14 +129,12 @@ void drawRays2D() {
       rx = (player.y - ry) * aTan + player.x;
       yo = -64;
       xo = -yo * aTan;
-    }
-    if (ra < PI) {
+    } else if (ra < PI) {
       ry = (((int)player.y >> 6) << 6) + 64;
       rx = (player.y - ry) * aTan + player.x;
       yo = 64;
       xo = -yo * aTan;
-    }
-    if (ra == 0 || ra == PI) {
+    } else if (ra == 0 || ra == PI) {
       rx = player.x;
       ry = player.y;
       dof = 8;
@@ -139,9 +144,9 @@ void drawRays2D() {
       my = (int)(ry) >> 6;
       mp = my * mapX + mx;
       if (mp > 0 && mp < mapX * mapY && map[mp] == 1) {
-        hx=rx;
-        hy=ry;
-        distH  =dist(player.x, player.y, hx,hy, player.angle);
+        hx = rx;
+        hy = ry;
+        distH = dist(player.x, player.y, hx, hy, player.angle);
         dof = 8;
       } else {
         rx += xo;
@@ -152,7 +157,7 @@ void drawRays2D() {
 
     /* vertical  */
     dof = 0;
-    float distV=1000000, vx=player.x, vy=player.y;
+    float distV = 1000000, vx = player.x, vy = player.y;
     float nTan = -tan(ra);
 
     if (ra > PI2 && ra < PI3) {
@@ -160,14 +165,12 @@ void drawRays2D() {
       ry = (player.x - rx) * nTan + player.y;
       xo = -64;
       yo = -xo * nTan;
-    }
-    if (ra < PI2 || ra > PI3) {
+    } else if (ra < PI2 || ra > PI3) {
       rx = (((int)player.x >> 6) << 6) + 64;
       ry = (player.x - rx) * nTan + player.y;
       xo = 64;
       yo = -xo * nTan;
-    }
-    if (ra == 0 || ra == PI) {
+    } else if (ra == 0 || ra == PI) {
       rx = player.x;
       ry = player.y;
       dof = 8;
@@ -177,9 +180,9 @@ void drawRays2D() {
       my = (int)(ry) >> 6;
       mp = my * mapX + mx;
       if (mp > 0 && mp < mapX * mapY && map[mp] == 1) {
-        vx=rx;
-        vy=ry;
-        distV  =dist(player.x, player.y, vx,vy, player.angle);
+        vx = rx;
+        vy = ry;
+        distV = dist(player.x, player.y, vx, vy, player.angle);
         dof = 8;
       } else {
         rx += xo;
@@ -189,19 +192,64 @@ void drawRays2D() {
     }
 
     if (distV < distH) {
-      rx=vx;
-      ry=vy;
-    }
-    if (distV > distH) {
-      rx=hx;
-      ry=hy;
+      rx = vx;
+      ry = vy;
+      distT = distV;
+      glColor3f(0.9f, 0, 0);
+    } else if (distH < distV) {
+      rx = hx;
+      ry = hy;
+      distT = distH;
+      glColor3f(0.6f, 0, 0);
     }
 
-    glColor3f(1, 0, 0);
+    printf("rx=%f ry=%f ", rx, ry);
+    printf("dh=%f dv=%f\n", distH, distV);
+
     glLineWidth(1);
     glBegin(GL_LINES);
     glVertex2i(player.x, player.y);
     glVertex2i(rx, ry);
+    glEnd();
+
+    ra += ONE_RAD;
+
+    /* draw 3d wall */
+
+    float ca = player.angle - ra; /* fix fisheye */
+    if (ca < 0) {
+      ca += 2 * PI;
+    } else if (ca > 2 * PI) {
+      ca -= 2 * PI;
+    }
+    distT = distT * cos(ca);
+
+    int lineH = (mapS * HEIGHT) / (distT);
+    if (lineH > HEIGHT)
+      lineH = HEIGHT;
+
+    int lineOff = (HEIGHT / 2) - (lineH / 2);
+
+    glLineWidth(8);
+    glBegin(GL_LINES);
+    glVertex2i(r * 8 + (WIDTH / 2), lineOff);
+    glVertex2i(r * 8 + (WIDTH / 2), lineOff + lineH);
+    glEnd();
+
+    /* ceil */
+    glColor3f(0, 0.5, 0);
+    glLineWidth(8);
+    glBegin(GL_LINES);
+    glVertex2i(r * 8 + (WIDTH / 2), 0);
+    glVertex2i(r * 8 + (WIDTH / 2), lineOff);
+    glEnd();
+
+    /* floor */
+    glColor3f(0, 0.5, 0.6);
+    glLineWidth(8);
+    glBegin(GL_LINES);
+    glVertex2i(r * 8 + (WIDTH / 2), lineOff + lineH);
+    glVertex2i(r * 8 + (WIDTH / 2), HEIGHT);
     glEnd();
   }
 }
@@ -214,8 +262,8 @@ void drawDisplay() {
   drawPlayer();
   drawRays2D();
 
-  printf("x=%i, y=%i=, dx=%f, dy=%f, pa=%f\n",
-         player.x, player.y, player.x_delta, player.y_delta, player.angle);
+  printf("x=%i, y=%i=, dx=%f, dy=%f, pa=%f\n", player.x, player.y,
+         player.x_delta, player.y_delta, player.angle);
 
   glutSwapBuffers();
 }
