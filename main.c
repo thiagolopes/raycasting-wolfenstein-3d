@@ -1,8 +1,13 @@
+#include <GL/freeglut_std.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
 #include <math.h>
 #include <stdio.h>
+
+/* update to use glfw or sdl
+   https://www.glfw.org/docs/latest/quick.html#quick_include,
+   https://www.libsdl.org/release/SDL-1.2.15/docs/html/guidevideoopengl.html*/
 
 #define WIDTH 1024
 #define HEIGHT 512
@@ -13,15 +18,31 @@
 
 #define ONE_RAD M_PI / 180
 
+typedef struct ButtonKeys {
+  int a, d, w, s;
+} Keyboard;
+
+typedef struct Player {
+  int x, y;
+  float x_delta, y_delta, angle;
+} Player;
+
+Player player;
+Keyboard keyboard;
+
+/* frames and fps */
+float frame1, fps, frame2;
+
+/* map */
 int mapX = 8, mapY = 8, mapS = 64;
 int map[] = {
     1, 1, 1, 1, 1, 1, 1, 1,
     1, 0, 1, 0, 0, 0, 0, 1,
-    1, 0, 1, 0, 0, 1, 0, 1,
-    1, 0, 1, 0, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 1, 0, 1,
     1, 0, 0, 0, 0, 1, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 1, 1, 1, 1, 1,
+    1, 1, 0, 0, 0, 0, 0, 1,
     1, 1, 1, 1, 1, 1, 1, 1,
 };
 
@@ -52,13 +73,6 @@ void drawMap2D() {
   }
 }
 
-typedef struct Player {
-  int x, y;
-  float x_delta, y_delta, angle;
-} Player;
-
-Player player;
-
 void drawPlayer() {
   glColor3f(1, 1, 1);
   glPointSize(8);
@@ -74,32 +88,30 @@ void drawPlayer() {
   glEnd();
 }
 
-void handlerKeyPressed(unsigned char key, int x, int y) {
-  switch (key) {
-  case 'a':
-    player.angle -= .1f;
+void updatePlayerPosition(float fps){
+  if (keyboard.a == 1){
+    player.angle -=  0.005 * fps;
     if (player.angle < 0)
       player.angle += PI * 2;
 
     player.x_delta = cos(player.angle) * 5;
     player.y_delta = sin(player.angle) * 5;
-    break;
-  case 'd':
-    player.angle += .1f;
+  }
+  if (keyboard.d == 1){
+    player.angle +=  0.005 * fps;
     if (player.angle > PI * 2)
       player.angle -= PI * 2;
 
     player.x_delta = cos(player.angle) * 5;
     player.y_delta = sin(player.angle) * 5;
-    break;
-  case 'w':
+  }
+  if (keyboard.w == 1) {
     player.y += player.y_delta;
     player.x += player.x_delta;
-    break;
-  case 's':
+  }
+  if (keyboard.s == 1) {
     player.y -= player.y_delta;
     player.x -= player.x_delta;
-    break;
   }
   glutPostRedisplay();
 }
@@ -111,7 +123,7 @@ void drawRays2D() {
 
   ra = player.angle - (30 * ONE_RAD);
 
-  for (r = 0; r < 60; r++) {
+  for (r = 0; r < 70; r++) {
     /* normalize ray angle*/
     if (ra < 0) {
       ra += 2 * PI;
@@ -119,7 +131,7 @@ void drawRays2D() {
       ra -= 2 * PI;
     }
 
-    /* horizontal  */
+    /* horizontal  check */
     dof = 0;
     float distH = 1000000, hx = player.x, hy = player.y;
     float aTan = -1 / tan(ra);
@@ -155,7 +167,7 @@ void drawRays2D() {
       }
     }
 
-    /* vertical  */
+    /* vertical check */
     dof = 0;
     float distV = 1000000, vx = player.x, vy = player.y;
     float nTan = -tan(ra);
@@ -205,7 +217,6 @@ void drawRays2D() {
 
     printf("rx=%f ry=%f ", rx, ry);
     printf("dh=%f dv=%f\n", distH, distV);
-
     glLineWidth(1);
     glBegin(GL_LINES);
     glVertex2i(player.x, player.y);
@@ -257,6 +268,12 @@ void drawRays2D() {
 void drawDisplay() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  /* frame calc here */
+  frame2 = glutGet(GLUT_ELAPSED_TIME); fps=(frame2 - frame1); frame1 = glutGet(GLUT_ELAPSED_TIME);
+
+  /* update here */
+  updatePlayerPosition(fps);
+
   /* draw here */
   drawMap2D();
   drawPlayer();
@@ -279,14 +296,58 @@ void init() {
   player.y_delta = sin(player.angle) * 5;
 }
 
+void forceReshapeWindow(int w, int h) {
+  glutReshapeWindow(WIDTH, HEIGHT);
+}
+
+
+void handlerButton(unsigned char key, int x, int y) {
+  switch (key) {
+  case 'a':
+    keyboard.a = 1;
+    break;
+  case 'd':
+    keyboard.d = 1;
+    break;
+  case 'w':
+    keyboard.w = 1;
+    break;
+  case 's':
+    keyboard.s = 1;
+    break;
+  }
+}
+
+
+void handlerButtonUp(unsigned char key, int x, int y) {
+  switch (key) {
+  case 'a':
+    keyboard.a = 0;
+    break;
+  case 'd':
+    keyboard.d = 0;
+    break;
+  case 'w':
+    keyboard.w = 0;
+    break;
+  case 's':
+    keyboard.s = 0;
+    break;
+  }
+}
+
+
 int main(int argc, char *argv[]) {
   /* TODO - comment all opengl stuff, like a documentation resume*/
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
   glutInitWindowSize(WIDTH, HEIGHT);
+  glutInitWindowPosition(200, 200);
   glutCreateWindow("");
   init();
+  glutReshapeFunc(forceReshapeWindow);
   glutDisplayFunc(drawDisplay);
-  glutKeyboardFunc(handlerKeyPressed);
+  glutKeyboardFunc(handlerButton);
+  glutKeyboardUpFunc(handlerButtonUp);
   glutMainLoop();
 }
