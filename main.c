@@ -1,7 +1,4 @@
 #include <GL/freeglut_std.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -27,6 +24,12 @@ typedef struct Player {
   float x_delta, y_delta, angle;
 } Player;
 
+typedef struct Ray {
+  float x, y, xf, yf, magnitude;
+  int angle;
+} Ray;
+
+
 Player player;
 Keyboard keyboard;
 
@@ -48,6 +51,14 @@ int map[] = {
 
 float dist(float ax, float ay, float bx, float by, float angle) {
   return sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+}
+
+void calculeMagnitude(Ray *ray) {
+  ray->magnitude = sqrt((ray->xf - ray->x) * (ray->xf - ray->x) + (ray->yf - ray->y) * (ray->yf - ray->y));
+}
+
+float randRay(Ray *ray) {
+  return ray->angle * PI / 180;
 }
 
 void drawMap2D() {
