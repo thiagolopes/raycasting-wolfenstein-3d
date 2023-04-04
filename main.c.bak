@@ -1,0 +1,282 @@
+#include <GL/freeglut_std.h>
+#include <GL/gl.h>
+#include <math.h>
+#include <stdio.h>
+
+/* update to use glfw or sdl
+   https://www.glfw.org/docs/latest/quick.html#quick_include,
+   https://www.libsdl.org/release/SDL-1.2.15/docs/html/guidevideoopengl.html*/
+
+#define WIDTH 1024
+#define HEIGHT 512
+
+/* update to 720p (1280x720) to easy scale */
+
+#define PI 3.14
+#define _2PI PI * 2
+#define PI2 PI / 2
+#define PI3 3 * PI / 2
+
+#define ONE_RAD M_PI / 180
+
+enum Directions {
+  UP,
+  DOWN,
+};
+
+const int FOV = 60;
+
+typedef struct ButtonKeys {
+  int a, d, w, s;
+} Keyboard;
+
+typedef struct Player {
+  int x, y;
+  float x_delta, y_delta, angle;
+} Player;
+
+Player player;
+Keyboard keyboard;
+
+/* frames and fps */
+float frame1, fps, frame2;
+
+/* map */
+int mapX = 8, mapY = 8, grid_lenth = 64;
+int map[] = {
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 0, 1, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 1, 0, 1,
+    1, 0, 0, 0, 0, 1, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 1, 1, 1, 1, 1,
+    1, 1, 0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+};
+
+float dist(float ax, float ay, float bx, float by) {
+  return sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+}
+
+/* void calculeMagnitude(Ray *ray) { */
+/*   ray->magnitude = sqrt((ray->xf - ray->x) * (ray->xf - ray->x) + (ray->yf - ray->y) * (ray->yf - ray->y)); */
+/* } */
+
+/* float randRay(Ray *ray) { */
+/*   return ray->angle * PI / 180; */
+/* } */
+
+float normalizeRadAngle(float radAngle){
+  if (radAngle < 0){
+    radAngle += _2PI;
+  } else if (radAngle > _2PI){
+    radAngle -= _2PI;
+  }
+  return floorf(radAngle * 100) / 100;
+}
+
+void drawMap2D() {
+  int xo, yo;
+  for (int y = 0; y < mapY; y++) {
+    for (int x = 0; x < mapX; x++) {
+      if (map[y * mapX + x]) {
+        glColor3f(1, 1, 1);
+      } else {
+        glColor3f(0, 0, 0);
+      }
+
+      int xo = x * grid_lenth;
+      int yo = y * grid_lenth;
+
+      glBegin(GL_QUADS);
+      glVertex2i(xo, yo);
+      glVertex2i(xo, yo + grid_lenth);
+      glVertex2i(xo + grid_lenth, yo + grid_lenth);
+      glVertex2i(xo + grid_lenth, yo);
+      glEnd();
+    }
+  }
+}
+
+void drawPlayer() {
+  glColor3f(1, 1, 1);
+  glPointSize(8);
+  glBegin(GL_POINTS);
+  glVertex2i(player.x, player.y);
+  glEnd();
+
+  glColor3f(1, 1, 1);
+  glLineWidth(3);
+  glBegin(GL_LINES);
+  glVertex2i(player.x, player.y);
+  glVertex2i(player.x + player.x_delta * 5, player.y + player.y_delta * 5);
+  glEnd();
+}
+
+void updatePlayerPosition(){
+  if (keyboard.a == 1){
+    player.angle -=  ONE_RAD;
+    player.x_delta = cos(player.angle) * 5;
+    player.y_delta = sin(player.angle) * 5;
+  }
+  if (keyboard.d == 1){
+    player.angle += ONE_RAD;
+    player.x_delta = cos(player.angle) * 5;
+    player.y_delta = sin(player.angle) * 5;
+  }
+  if (keyboard.w == 1) {
+    player.y += player.y_delta;
+    player.x += player.x_delta;
+  }
+  if (keyboard.s == 1) {
+    player.y -= player.y_delta;
+    player.x -= player.x_delta;
+  }
+  player.angle = normalizeRadAngle(player.angle);
+  glutPostRedisplay();
+}
+
+
+void calculateRays() {
+  /* float angle = player.angle - ((float)FOV/2 * ONE_RAD), tan_angle; */
+  float angle = player.angle, tan_angle;
+  /* int horizontal_index; */
+
+  float ray_x=player.x, ray_y=player.y, ray_xo, ray_yo, cx, cy;
+  int grid_ray_x=0, grid_ray_y=0, colision = mapY, index=0;
+
+  /* horizontal_index = collisionRayHorizontal(angle, tan_angle); */
+  /* printf("HORIZONTAL INDEX=%i\n", horizontal_index); */
+
+  /* for (int a = 0; a < FOV; a++){ */
+  for (int a = 0; a < 1; a++){
+    tan_angle = tan(angle);
+
+    if (angle > PI){
+      printf("UP, angle=%f\n", angle);
+      /* find the first Y horizontal wall */
+      ray_y = (((int)(player.y / grid_lenth)) * grid_lenth) - 1;
+      ray_x = player.x + ((player.y - ray_y) / tan_angle);
+      /* face up is minus */
+      ray_yo = -64;
+    }else if (angle < PI) {
+      printf("DOWN, angle=%f\n", angle);
+      ray_y = (((int)(player.y / grid_lenth)) * grid_lenth) + grid_lenth;
+      ray_x = player.x + (ray_y - player.y) / tan_angle;
+      /* face down is plus */
+      ray_yo = 64;
+    }else{
+      printf("LEFT or RIGHT\n");
+      /* NERVER CALLED TODO REMOVE */
+      exit(0);
+   }
+  ray_xo = grid_lenth / tan_angle;
+
+  /* while(colision){ */
+  /*   grid_ray_y = (int)ray_y / grid_lenth; */
+  /*   grid_ray_x = (int)ray_x / grid_lenth; */
+
+  /*   index = (grid_ray_y * mapX) + grid_ray_x; */
+  /*   if (index > 0 && index <= mapX * mapY && map[index] == 0){ */
+  /*     printf("NO WALL\n"); */
+  /*     ray_x += ray_xo; */
+  /*     ray_y += ray_yo; */
+  /*     colision--; */
+  /*   } */
+  /*   else{ */
+  /*     printf("grid_ray_x=%i, grid_ray_y=%i\n", grid_ray_x, grid_ray_y); */
+  /*     printf("WALL!!!! INDEX=%i\n", grid_ray_y * mapX + grid_ray_x); */
+  /*     colision = 0; */
+  /*   } */
+  /* } */
+
+  /* printf("p.x=%d, p.y=%d, p.angle=%f, ray_x=%f, ray_y=%f, angle=%f\n", player.x, player.y, player.angle, ray_x, ray_y, angle); */
+  /* glBegin(GL_LINES); */
+  /* glColor3f(1, 0, 0); */
+  /* glVertex2i(player.x, player.y); */
+  /* glVertex2i(ray_x, ray_y); */
+  /* glEnd(); */
+
+  }
+}
+
+
+void drawDisplay() {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  /* update here */
+  updatePlayerPosition();
+
+  /* draw here */
+  drawMap2D();
+  drawPlayer();
+  calculateRays();
+  glutSwapBuffers();
+}
+
+void init() {
+  glClearColor(.3f, .3f, .3f, 0);
+  gluOrtho2D(0, WIDTH, HEIGHT, 0);
+
+  player.x = 300;
+  player.y = 300;
+  player.angle = 2 * PI;
+  player.x_delta = cos(player.angle) * 5;
+  player.y_delta = sin(player.angle) * 5;
+}
+
+void forceReshapeWindow(int w, int h) {
+  glutReshapeWindow(WIDTH, HEIGHT);
+}
+
+
+void handlerButton(unsigned char key, int x, int y) {
+  switch (key) {
+  case 'a':
+    keyboard.a = 1;
+    break;
+  case 'd':
+    keyboard.d = 1;
+    break;
+  case 'w':
+    keyboard.w = 1;
+    break;
+  case 's':
+    keyboard.s = 1;
+    break;
+  }
+}
+
+
+void handlerButtonUp(unsigned char key, int x, int y) {
+  switch (key) {
+  case 'a':
+    keyboard.a = 0;
+    break;
+  case 'd':
+    keyboard.d = 0;
+    break;
+  case 'w':
+    keyboard.w = 0;
+    break;
+  case 's':
+    keyboard.s = 0;
+    break;
+  }
+}
+
+
+int main(int argc, char *argv[]) {
+  /* TODO - comment all opengl stuff, like a documentation resume*/
+  glutInit(&argc, argv);
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+  glutInitWindowSize(WIDTH, HEIGHT);
+  glutInitWindowPosition(200, 200);
+  glutCreateWindow("");
+  init();
+  glutReshapeFunc(forceReshapeWindow);
+  glutDisplayFunc(drawDisplay);
+  glutKeyboardFunc(handlerButton);
+  glutKeyboardUpFunc(handlerButtonUp);
+  glutMainLoop();
+}

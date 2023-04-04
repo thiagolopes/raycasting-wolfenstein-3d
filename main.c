@@ -1,364 +1,147 @@
-#include <GL/freeglut_std.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <SDL/SDL.h>
 #include <math.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 
-/* update to use glfw or sdl
-   https://www.glfw.org/docs/latest/quick.html#quick_include,
-   https://www.libsdl.org/release/SDL-1.2.15/docs/html/guidevideoopengl.html*/
-
-#define WIDTH 1024
-#define HEIGHT 512
-
-#define PI M_PI
-#define PI2 M_PI_2
-#define PI3 3 * PI / 2
-
-#define ONE_RAD M_PI / 180
-
-typedef struct ButtonKeys {
-  int a, d, w, s;
-} Keyboard;
-
-typedef struct Player {
-  int x, y;
-  float x_delta, y_delta, angle;
-} Player;
-
-typedef struct Ray {
-  float x, y, xf, yf, magnitude;
-  int angle;
-} Ray;
-
-
-Player player;
-Keyboard keyboard;
-
-/* frames and fps */
-float frame1, fps, frame2;
-
-/* map */
-int mapX = 8, mapY = 8, mapS = 64;
-int map[] = {
-    1, 1, 1, 1, 1, 1, 1, 1,
-    1, 0, 1, 0, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 1, 0, 1,
-    1, 0, 0, 0, 0, 1, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 0, 1, 1, 1, 1, 1,
-    1, 1, 0, 0, 0, 0, 0, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-};
-
-float dist(float ax, float ay, float bx, float by, float angle) {
-  return sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+static void quit_tutorial(int code) {
+  SDL_Quit();
+  exit(code);
 }
 
-void calculeMagnitude(Ray *ray) {
-  ray->magnitude = sqrt((ray->xf - ray->x) * (ray->xf - ray->x) + (ray->yf - ray->y) * (ray->yf - ray->y));
-}
-
-float randRay(Ray *ray) {
-  return ray->angle * PI / 180;
-}
-
-void drawMap2D() {
-  int xo, yo;
-  for (int y = 0; y < mapY; y++) {
-    for (int x = 0; x < mapX; x++) {
-      if (map[y * mapX + x]) {
-        glColor3f(1, 1, 1);
-      } else {
-        glColor3f(0, 0, 0);
-      }
-
-      int xo = x * mapS;
-      int yo = y * mapS;
-
-      glBegin(GL_QUADS);
-      glVertex2i(xo, yo);
-      glVertex2i(xo, yo + mapS);
-      glVertex2i(xo + mapS, yo + mapS);
-      glVertex2i(xo + mapS, yo);
-      glEnd();
-    }
-  }
-}
-
-void drawPlayer() {
-  glColor3f(1, 1, 1);
-  glPointSize(8);
-  glBegin(GL_POINTS);
-  glVertex2i(player.x, player.y);
-  glEnd();
-
-  glColor3f(1, 1, 1);
-  glLineWidth(3);
-  glBegin(GL_LINES);
-  glVertex2i(player.x, player.y);
-  glVertex2i(player.x + player.x_delta * 5, player.y + player.y_delta * 5);
-  glEnd();
-}
-
-void updatePlayerPosition(float fps){
-  if (keyboard.a == 1){
-    player.angle -=  0.005 * fps;
-    if (player.angle < 0)
-      player.angle += PI * 2;
-
-    player.x_delta = cos(player.angle) * 5;
-    player.y_delta = sin(player.angle) * 5;
-  }
-  if (keyboard.d == 1){
-    player.angle +=  0.005 * fps;
-    if (player.angle > PI * 2)
-      player.angle -= PI * 2;
-
-    player.x_delta = cos(player.angle) * 5;
-    player.y_delta = sin(player.angle) * 5;
-  }
-  if (keyboard.w == 1) {
-    player.y += player.y_delta;
-    player.x += player.x_delta;
-  }
-  if (keyboard.s == 1) {
-    player.y -= player.y_delta;
-    player.x -= player.x_delta;
-  }
-  glutPostRedisplay();
-}
-
-void drawRays2D() {
-  /* N>>6 is equal N/64 (because 2^6=64) */
-  int r, mx, my, mp, dof;
-  float rx, ry, ra, xo, yo, distT;
-
-  ra = player.angle - (30 * ONE_RAD);
-
-  for (r = 0; r < 70; r++) {
-    /* normalize ray angle*/
-    if (ra < 0) {
-      ra += 2 * PI;
-    } else if (ra > 2 * PI) {
-      ra -= 2 * PI;
-    }
-
-    /* horizontal  check */
-    dof = 0;
-    float distH = 1000000, hx = player.x, hy = player.y;
-    float aTan = -1 / tan(ra);
-
-    if (ra > PI) {
-      ry = (((int)player.y >> 6) << 6) - 0.0001;
-      rx = (player.y - ry) * aTan + player.x;
-      yo = -64;
-      xo = -yo * aTan;
-    } else if (ra < PI) {
-      ry = (((int)player.y >> 6) << 6) + 64;
-      rx = (player.y - ry) * aTan + player.x;
-      yo = 64;
-      xo = -yo * aTan;
-    } else if (ra == 0 || ra == PI) {
-      rx = player.x;
-      ry = player.y;
-      dof = 8;
-    }
-    while (dof < 8) {
-      mx = (int)(rx) >> 6;
-      my = (int)(ry) >> 6;
-      mp = my * mapX + mx;
-      if (mp > 0 && mp < mapX * mapY && map[mp] == 1) {
-        hx = rx;
-        hy = ry;
-        distH = dist(player.x, player.y, hx, hy, player.angle);
-        dof = 8;
-      } else {
-        rx += xo;
-        ry += yo;
-        dof += 1;
-      }
-    }
-
-    /* vertical check */
-    dof = 0;
-    float distV = 1000000, vx = player.x, vy = player.y;
-    float nTan = -tan(ra);
-
-    if (ra > PI2 && ra < PI3) {
-      rx = (((int)player.x >> 6) << 6) - 0.0001;
-      ry = (player.x - rx) * nTan + player.y;
-      xo = -64;
-      yo = -xo * nTan;
-    } else if (ra < PI2 || ra > PI3) {
-      rx = (((int)player.x >> 6) << 6) + 64;
-      ry = (player.x - rx) * nTan + player.y;
-      xo = 64;
-      yo = -xo * nTan;
-    } else if (ra == 0 || ra == PI) {
-      rx = player.x;
-      ry = player.y;
-      dof = 8;
-    }
-    while (dof < 8) {
-      mx = (int)(rx) >> 6;
-      my = (int)(ry) >> 6;
-      mp = my * mapX + mx;
-      if (mp > 0 && mp < mapX * mapY && map[mp] == 1) {
-        vx = rx;
-        vy = ry;
-        distV = dist(player.x, player.y, vx, vy, player.angle);
-        dof = 8;
-      } else {
-        rx += xo;
-        ry += yo;
-        dof += 1;
-      }
-    }
-
-    if (distV < distH) {
-      rx = vx;
-      ry = vy;
-      distT = distV;
-      glColor3f(0.9f, 0, 0);
-    } else if (distH < distV) {
-      rx = hx;
-      ry = hy;
-      distT = distH;
-      glColor3f(0.6f, 0, 0);
-    }
-
-    printf("rx=%f ry=%f ", rx, ry);
-    printf("dh=%f dv=%f\n", distH, distV);
-    glLineWidth(1);
-    glBegin(GL_LINES);
-    glVertex2i(player.x, player.y);
-    glVertex2i(rx, ry);
-    glEnd();
-
-    ra += ONE_RAD;
-
-    /* draw 3d wall */
-
-    float ca = player.angle - ra; /* fix fisheye */
-    if (ca < 0) {
-      ca += 2 * PI;
-    } else if (ca > 2 * PI) {
-      ca -= 2 * PI;
-    }
-    distT = distT * cos(ca);
-
-    int lineH = (mapS * HEIGHT) / (distT);
-    if (lineH > HEIGHT)
-      lineH = HEIGHT;
-
-    int lineOff = (HEIGHT / 2) - (lineH / 2);
-
-    glLineWidth(8);
-    glBegin(GL_LINES);
-    glVertex2i(r * 8 + (WIDTH / 2), lineOff);
-    glVertex2i(r * 8 + (WIDTH / 2), lineOff + lineH);
-    glEnd();
-
-    /* ceil */
-    glColor3f(0, 0.5, 0);
-    glLineWidth(8);
-    glBegin(GL_LINES);
-    glVertex2i(r * 8 + (WIDTH / 2), 0);
-    glVertex2i(r * 8 + (WIDTH / 2), lineOff);
-    glEnd();
-
-    /* floor */
-    glColor3f(0, 0.5, 0.6);
-    glLineWidth(8);
-    glBegin(GL_LINES);
-    glVertex2i(r * 8 + (WIDTH / 2), lineOff + lineH);
-    glVertex2i(r * 8 + (WIDTH / 2), HEIGHT);
-    glEnd();
-  }
-}
-
-void drawDisplay() {
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  /* frame calc here */
-  frame2 = glutGet(GLUT_ELAPSED_TIME); fps=(frame2 - frame1); frame1 = glutGet(GLUT_ELAPSED_TIME);
-
-  /* update here */
-  updatePlayerPosition(fps);
-
-  /* draw here */
-  drawMap2D();
-  drawPlayer();
-  drawRays2D();
-
-  printf("x=%i, y=%i=, dx=%f, dy=%f, pa=%f\n", player.x, player.y,
-         player.x_delta, player.y_delta, player.angle);
-
-  glutSwapBuffers();
-}
-
-void init() {
-  glClearColor(.3f, .3f, .3f, 0);
-  gluOrtho2D(0, WIDTH, HEIGHT, 0);
-
-  player.x = 300;
-  player.y = 300;
-  player.angle = 2 * PI;
-  player.x_delta = cos(player.angle) * 5;
-  player.y_delta = sin(player.angle) * 5;
-}
-
-void forceReshapeWindow(int w, int h) {
-  glutReshapeWindow(WIDTH, HEIGHT);
-}
-
-
-void handlerButton(unsigned char key, int x, int y) {
-  switch (key) {
-  case 'a':
-    keyboard.a = 1;
+static void handle_key_down(SDL_keysym *keysym) {
+  switch (keysym->sym) {
+  case SDLK_ESCAPE:
+    quit_tutorial(0);
     break;
-  case 'd':
-    keyboard.d = 1;
-    break;
-  case 'w':
-    keyboard.w = 1;
-    break;
-  case 's':
-    keyboard.s = 1;
+  default:
     break;
   }
 }
 
+static void process_events(void) {
+  /* Our SDL event placeholder. */
+  SDL_Event event;
 
-void handlerButtonUp(unsigned char key, int x, int y) {
-  switch (key) {
-  case 'a':
-    keyboard.a = 0;
-    break;
-  case 'd':
-    keyboard.d = 0;
-    break;
-  case 'w':
-    keyboard.w = 0;
-    break;
-  case 's':
-    keyboard.s = 0;
-    break;
+  /* Grab all the events off the queue. */
+  while (SDL_PollEvent(&event)) {
+
+    switch (event.type) {
+    case SDL_KEYDOWN:
+      /* Handle key presses. */
+      handle_key_down(&event.key.keysym);
+      break;
+    case SDL_QUIT:
+      /* Handle quit requests (like Ctrl-c). */
+      quit_tutorial(0);
+      break;
+    }
   }
 }
 
+static void setup_opengl(int width, int height) {
+  float ratio = (float)width / (float)height;
+
+  /* Our shading model--Gouraud (smooth). */
+  glShadeModel(GL_SMOOTH);
+
+  /* Culling. */
+  glCullFace(GL_BACK);
+  glFrontFace(GL_CCW);
+  glEnable(GL_CULL_FACE);
+
+  /* Set the clear color. */
+  glClearColor(0, 0, 0, 0);
+
+  /* Setup our viewport. */
+  glViewport(0, 0, width, height);
+
+  /*
+   * Change to the projection matrix and set
+   * our viewing volume.
+   */
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  /*
+   * EXERCISE:
+   * Replace this with a call to glFrustum.
+   */
+  gluPerspective(60.0, ratio, 1.0, 1024.0);
+}
 
 int main(int argc, char *argv[]) {
-  /* TODO - comment all opengl stuff, like a documentation resume*/
-  glutInit(&argc, argv);
-  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-  glutInitWindowSize(WIDTH, HEIGHT);
-  glutInitWindowPosition(200, 200);
-  glutCreateWindow("");
-  init();
-  glutReshapeFunc(forceReshapeWindow);
-  glutDisplayFunc(drawDisplay);
-  glutKeyboardFunc(handlerButton);
-  glutKeyboardUpFunc(handlerButtonUp);
-  glutMainLoop();
+  const SDL_VideoInfo *info = NULL;
+  int width = 1024;
+  int height = 512;
+  /* Color depth in bits of our window. */
+  int bpp = 0;
+  /* Flags we will pass into SDL_SetVideoMode. */
+  int flags = 0;
+
+  /* First, initialize SDL's video subsystem. */
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    /* Failed, exit. */
+    fprintf(stderr, "Video initialization failed: %s\n", SDL_GetError());
+    quit_tutorial(1);
+  }
+
+  /* Let's get some video information. */
+  info = SDL_GetVideoInfo();
+  if (!info) {
+    /* This should probably never happen. */
+    fprintf(stderr, "Video query failed: %s\n", SDL_GetError());
+    quit_tutorial(1);
+  }
+  bpp = info->vfmt->BitsPerPixel;
+
+  /*
+   * Now, we want to setup our requested
+   * window attributes for our OpenGL window.
+   * We want *at least* 5 bits of red, green
+   * and blue. We also want at least a 16-bit
+   * depth buffer.
+   *
+   * The last thing we do is request a double
+   * buffered window. '1' turns on double
+   * buffering, '0' turns it off.
+   *
+   * Note that we do not use SDL_DOUBLEBUF in
+   * the flags to SDL_SetVideoMode. That does
+   * not affect the GL attribute state, only
+   * the standard 2D blitting setup.
+   */
+  SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
+  SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
+  SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
+  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+  flags = SDL_OPENGL;
+  if (SDL_SetVideoMode(width, height, bpp, flags) == 0) {
+    fprintf(stderr, "Video mode set failed: %s\n", SDL_GetError());
+    quit_tutorial(1);
+  }
+
+  /*
+   * At this point, we should have a properly setup
+   * double-buffered window for use with OpenGL.
+   */
+  setup_opengl(width, height);
+
+  while (1) {
+    /* Process incoming events. */
+    process_events();
+    /* Draw the screen. */
+  }
+
+  /*
+   * Record timings using SDL_GetTicks() and
+   * and print out frames per second at program
+   * end.
+   */
+
+  /* Never reached. */
+  return 0;
 }
