@@ -1,5 +1,8 @@
 #include <GL/gl.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_opengl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,9 +11,14 @@
 #define ONE_RAD PI / 180
 
 typedef struct {
+  int a, w, s, d;
+} ButtonKeys;
+
+typedef struct {
   int x;
   int y;
   float angle;
+  ButtonKeys Buttons;
 } Player;
 
 typedef struct {
@@ -69,6 +77,29 @@ void draw(AppGame *App) {
   drawPlayer(App);
 }
 
+static void handle_key(SDL_Keysym keysym, AppGame *App, int flag) {
+  switch (keysym.sym) {
+  case SDLK_ESCAPE:
+    App->run_status = 0;
+    break;
+  case SDLK_a:
+    App->Player.Buttons.a = flag;
+    break;
+  case SDLK_d:
+    App->Player.Buttons.d = flag;
+    break;
+  case SDLK_w:
+    App->Player.Buttons.w = flag;
+    break;
+  case SDLK_s:
+    App->Player.Buttons.s = flag;
+    break;
+  }
+
+  SDL_Log("a=%i, d%i, w=%i, s=%i", App->Player.Buttons.a, App->Player.Buttons.d,
+          App->Player.Buttons.w, App->Player.Buttons.s);
+}
+
 int main(int argc, char *args[]) {
   /* init */
   AppGame App = {1024, 512, "Project raycasting", 1, 0, {300, 300, 0}};
@@ -117,12 +148,19 @@ int main(int argc, char *args[]) {
     SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
 
   while (App.run_status) {
-    SDL_Event e;
-    while (SDL_PollEvent(&e) != 0) {
-      if (e.type == SDL_QUIT) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event) != 0) {
+      switch (event.type) {
+      case SDL_QUIT:
         App.run_status = 0;
+        break;
+      case SDL_KEYDOWN:
+        handle_key(event.key.keysym, &App, 1);
+        break;
+      case SDL_KEYUP:
+        handle_key(event.key.keysym, &App, 0);
+        break;
       }
-      /* handler events */
     }
 
     /* clear screen */
