@@ -1,5 +1,6 @@
 #include <GL/gl.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_error.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_keycode.h>
@@ -8,6 +9,7 @@
 #include <stdlib.h>
 
 #define PI 3.14
+#define PI2 (PI * 2)
 #define ONE_RAD PI / 180
 
 typedef struct {
@@ -15,9 +17,7 @@ typedef struct {
 } ButtonKeys;
 
 typedef struct {
-  int x;
-  int y;
-  float angle;
+  float x, y, view_x, view_y, angle;
   ButtonKeys Buttons;
 } Player;
 
@@ -41,11 +41,54 @@ int map[] = {
     1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
 
+float normalizedRand(float rand) {
+  if (rand > PI2)
+    return rand - PI2;
+  if (rand < 0)
+    return rand + PI2;
+  return rand;
+}
+
+void updatePlayer(AppGame *App) {
+  int magntude = 2;
+  if (App->Player.Buttons.a == 1) {
+    App->Player.angle -= ONE_RAD;
+    App->Player.view_x = cos(App->Player.angle);
+    App->Player.view_y = -sin(App->Player.angle);
+  }
+  if (App->Player.Buttons.d == 1) {
+    App->Player.angle += ONE_RAD;
+    App->Player.view_x = cos(App->Player.angle);
+    App->Player.view_y = -sin(App->Player.angle);
+  }
+  if (App->Player.Buttons.w == 1) {
+    App->Player.x += App->Player.view_x * magntude;
+    App->Player.y += App->Player.view_y * magntude;
+  }
+  if (App->Player.Buttons.s == 1) {
+    App->Player.x -= App->Player.view_x * magntude;
+    App->Player.y -= App->Player.view_y * magntude;
+  }
+
+  App->Player.angle = normalizedRand(App->Player.angle);
+  SDL_Log("angle=%f ,x=%i, y=%i, viewx=%f ,viewy=%f", App->Player.angle,
+          App->Player.x, App->Player.y, App->Player.view_x, App->Player.view_y);
+}
+
 void drawPlayer(AppGame *App) {
   glColor3f(0, 0, 1);
   glPointSize(8);
   glBegin(GL_POINTS);
   glVertex2i(App->Player.x, App->Player.y);
+  glEnd();
+
+  /* draw direction */
+  glColor3f(.5, .5, .5);
+  glLineWidth(3);
+  glBegin(GL_LINES);
+  glVertex2i(App->Player.x, App->Player.y);
+  glVertex2i(App->Player.x + App->Player.view_x * 20,
+             App->Player.y + App->Player.view_y * 20);
   glEnd();
 }
 
@@ -102,7 +145,8 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int flag) {
 
 int main(int argc, char *args[]) {
   /* init */
-  AppGame App = {1024, 512, "Project raycasting", 1, 0, {300, 300, 0}};
+  AppGame App = {1024, 512, "Project raycasting",
+                 1,    0,   {300, 300, cos(PI2), -sin(PI2), PI2}};
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVERYTHING | SDL_INIT_NOPARACHUTE) <
       0) {
@@ -165,7 +209,9 @@ int main(int argc, char *args[]) {
 
     /* clear screen */
     glClear(GL_COLOR_BUFFER_BIT);
+
     /* update here */
+    updatePlayer(&App);
 
     /* draw here */
     draw(&App);
