@@ -1,147 +1,145 @@
 #include <GL/gl.h>
-#include <GL/glu.h>
-#include <SDL/SDL.h>
-#include <math.h>
-
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-static void quit_tutorial(int code) {
-  SDL_Quit();
-  exit(code);
+#define PI 3.14
+#define ONE_RAD PI / 180
+
+typedef struct {
+  int x;
+  int y;
+  float angle;
+} Player;
+
+typedef struct {
+  int screen_width;
+  int screen_heigh;
+  char *window_name;
+  int run_status;
+  int window_fullcreen;
+  Player Player;
+} AppGame;
+
+SDL_Window *sdl_window = NULL;
+SDL_GLContext sdl_gl_context;
+
+/* map  */
+int mapX = 8, mapY = 8;
+int map[] = {
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1,
+    0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1,
+    1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+};
+
+void drawPlayer(AppGame *App) {
+  glColor3f(0, 0, 1);
+  glPointSize(8);
+  glBegin(GL_POINTS);
+  glVertex2i(App->Player.x, App->Player.y);
+  glEnd();
 }
 
-static void handle_key_down(SDL_keysym *keysym) {
-  switch (keysym->sym) {
-  case SDLK_ESCAPE:
-    quit_tutorial(0);
-    break;
-  default:
-    break;
-  }
-}
+void draw2DMap() {
+  int xo, yo;
+  int grid_lenth = 512 / mapX;
+  for (int y = 0; y < mapY; y++) {
+    for (int x = 0; x < mapX; x++) {
+      int xo = x * grid_lenth;
+      int yo = y * grid_lenth;
 
-static void process_events(void) {
-  /* Our SDL event placeholder. */
-  SDL_Event event;
-
-  /* Grab all the events off the queue. */
-  while (SDL_PollEvent(&event)) {
-
-    switch (event.type) {
-    case SDL_KEYDOWN:
-      /* Handle key presses. */
-      handle_key_down(&event.key.keysym);
-      break;
-    case SDL_QUIT:
-      /* Handle quit requests (like Ctrl-c). */
-      quit_tutorial(0);
-      break;
+      if (map[y * mapX + x]) {
+        glColor3f(1, 1, 1);
+      } else {
+        glColor3f(0, 0, 0);
+      }
+      glBegin(GL_QUADS);
+      glVertex2i(xo, yo);
+      glVertex2i(xo, yo + grid_lenth);
+      glVertex2i(xo + grid_lenth, yo + grid_lenth);
+      glVertex2i(xo + grid_lenth, yo);
+      glEnd();
     }
   }
 }
 
-static void setup_opengl(int width, int height) {
-  float ratio = (float)width / (float)height;
-
-  /* Our shading model--Gouraud (smooth). */
-  glShadeModel(GL_SMOOTH);
-
-  /* Culling. */
-  glCullFace(GL_BACK);
-  glFrontFace(GL_CCW);
-  glEnable(GL_CULL_FACE);
-
-  /* Set the clear color. */
-  glClearColor(0, 0, 0, 0);
-
-  /* Setup our viewport. */
-  glViewport(0, 0, width, height);
-
-  /*
-   * Change to the projection matrix and set
-   * our viewing volume.
-   */
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  /*
-   * EXERCISE:
-   * Replace this with a call to glFrustum.
-   */
-  gluPerspective(60.0, ratio, 1.0, 1024.0);
+void draw(AppGame *App) {
+  draw2DMap();
+  drawPlayer(App);
 }
 
-int main(int argc, char *argv[]) {
-  const SDL_VideoInfo *info = NULL;
-  int width = 1024;
-  int height = 512;
-  /* Color depth in bits of our window. */
-  int bpp = 0;
-  /* Flags we will pass into SDL_SetVideoMode. */
-  int flags = 0;
+int main(int argc, char *args[]) {
+  /* init */
+  AppGame App = {1024, 512, "Project raycasting", 1, 0, {300, 300, 0}};
 
-  /* First, initialize SDL's video subsystem. */
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    /* Failed, exit. */
-    fprintf(stderr, "Video initialization failed: %s\n", SDL_GetError());
-    quit_tutorial(1);
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVERYTHING | SDL_INIT_NOPARACHUTE) <
+      0) {
+    perror(SDL_GetError());
   }
-
-  /* Let's get some video information. */
-  info = SDL_GetVideoInfo();
-  if (!info) {
-    /* This should probably never happen. */
-    fprintf(stderr, "Video query failed: %s\n", SDL_GetError());
-    quit_tutorial(1);
-  }
-  bpp = info->vfmt->BitsPerPixel;
-
-  /*
-   * Now, we want to setup our requested
-   * window attributes for our OpenGL window.
-   * We want *at least* 5 bits of red, green
-   * and blue. We also want at least a 16-bit
-   * depth buffer.
-   *
-   * The last thing we do is request a double
-   * buffered window. '1' turns on double
-   * buffering, '0' turns it off.
-   *
-   * Note that we do not use SDL_DOUBLEBUF in
-   * the flags to SDL_SetVideoMode. That does
-   * not affect the GL attribute state, only
-   * the standard 2D blitting setup.
-   */
-  SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
-  SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
-  SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
-  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+  SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+  SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 
-  flags = SDL_OPENGL;
-  if (SDL_SetVideoMode(width, height, bpp, flags) == 0) {
-    fprintf(stderr, "Video mode set failed: %s\n", SDL_GetError());
-    quit_tutorial(1);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+  sdl_window = SDL_CreateWindow(
+      App.window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+      App.screen_width, App.screen_heigh, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+  if (sdl_window == NULL) {
+    perror(SDL_GetError());
   }
 
-  /*
-   * At this point, we should have a properly setup
-   * double-buffered window for use with OpenGL.
-   */
-  setup_opengl(width, height);
-
-  while (1) {
-    /* Process incoming events. */
-    process_events();
-    /* Draw the screen. */
+  sdl_gl_context = SDL_GL_CreateContext(sdl_window);
+  if (sdl_gl_context == NULL) {
+    perror(SDL_GetError());
   }
 
-  /*
-   * Record timings using SDL_GetTicks() and
-   * and print out frames per second at program
-   * end.
-   */
+  /* setup vsync */
+  if (SDL_GL_SetSwapInterval(1) < 0) {
+    perror(SDL_GetError());
+  }
 
-  /* Never reached. */
+  /* init opengl view */
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0, App.screen_width, App.screen_heigh, 0, 1, -1);
+  glMatrixMode(GL_MODELVIEW);
+  glEnable(GL_TEXTURE_2D);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+  if (App.window_fullcreen)
+    SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
+
+  while (App.run_status) {
+    SDL_Event e;
+    while (SDL_PollEvent(&e) != 0) {
+      if (e.type == SDL_QUIT) {
+        App.run_status = 0;
+      }
+      /* handler events */
+    }
+
+    /* clear screen */
+    glClear(GL_COLOR_BUFFER_BIT);
+    /* update here */
+
+    /* draw here */
+    draw(&App);
+
+    /* update screen */
+    SDL_GL_SwapWindow(sdl_window);
+  }
+
+  /* shutdown */
+  SDL_VideoQuit();
+  SDL_GL_DeleteContext(sdl_gl_context);
+  SDL_DestroyWindow(sdl_window);
+  SDL_Quit();
   return 0;
 }

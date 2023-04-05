@@ -1,5 +1,5 @@
 CC = gcc
-LIBS = -lGL -lGLU -lglut -lm -lSDL
+LIBS = -lGL -lm -lSDL2
 
 all:
 	$(CC) main.c -g -o main $(LIBS)
