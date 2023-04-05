@@ -22,6 +22,10 @@ typedef struct {
 } Player;
 
 typedef struct {
+  float x, y, dist;
+} Ray;
+
+typedef struct {
   int screen_width;
   int screen_heigh;
   char *window_name;
@@ -34,12 +38,16 @@ SDL_Window *sdl_window = NULL;
 SDL_GLContext sdl_gl_context;
 
 /* map  */
-int mapX = 8, mapY = 8;
+int mapX = 8, mapY = 8, block_in_size = 64;
 int map[] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1,
-    0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1,
-    1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0,
+    0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+    1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
+
+int x_y_to_linear_2d_map(int x, int y) { return y * mapX + x; }
+
+int rad_to_degree(float angle) { return (int)(angle * 180 / PI); }
 
 float normalizedRand(float rand) {
   if (rand > PI2)
@@ -51,12 +59,12 @@ float normalizedRand(float rand) {
 
 void updatePlayer(AppGame *App) {
   int magntude = 2;
-  if (App->Player.Buttons.a == 1) {
+  if (App->Player.Buttons.d == 1) {
     App->Player.angle -= ONE_RAD;
     App->Player.view_x = cos(App->Player.angle);
     App->Player.view_y = -sin(App->Player.angle);
   }
-  if (App->Player.Buttons.d == 1) {
+  if (App->Player.Buttons.a == 1) {
     App->Player.angle += ONE_RAD;
     App->Player.view_x = cos(App->Player.angle);
     App->Player.view_y = -sin(App->Player.angle);
@@ -71,8 +79,136 @@ void updatePlayer(AppGame *App) {
   }
 
   App->Player.angle = normalizedRand(App->Player.angle);
-  SDL_Log("angle=%f ,x=%i, y=%i, viewx=%f ,viewy=%f", App->Player.angle,
-          App->Player.x, App->Player.y, App->Player.view_x, App->Player.view_y);
+  SDL_Log("angle=%f, angle degree=%i ,x=%f, y=%f, viewx=%f ,viewy=%f",
+          App->Player.angle, rad_to_degree(App->Player.angle), App->Player.x,
+          App->Player.y, App->Player.view_x, App->Player.view_y);
+}
+
+void ray_horizontal(float player_x, float player_y, float angle,
+                    int collision_point[]) {
+  int px = 0, py = 0, dx, dy, n = block_in_size;
+  float tan_angle = tan(angle);
+
+  if (sin(angle) > 0.0001) {
+    /* up */
+    py = ((int)(player_y / n) * n - 1);
+    dy = -64;
+  }
+  if (sin(angle) < -0.0001) {
+    /* down */
+    py = ((int)(player_y / n) * n + n);
+    dy = 64;
+  }
+  px = (int)player_x + (int)((player_y - py) / tan_angle);
+  dx = (int)(n / tan_angle);
+
+  int collision = mapX;
+  while (collision) {
+    int x = (int)px / n;
+    int y = (int)py / n;
+    int map_index = x_y_to_linear_2d_map(x, y);
+
+    if (map_index > 0 && map_index < mapX * mapY && map[map_index] != 0) {
+      SDL_Log("HORIZONTAL COLLISION index= %i, map[]=%i, px_i=%i, px_i=%i, "
+              "collision_steps=%i",
+              map_index, map[map_index], (int)px / n, (int)py / n,
+              mapY - collision);
+      collision = 0;
+    } else {
+      px += dx;
+      py += dy;
+      collision--;
+    }
+  }
+
+  collision_point[0] = px;
+  collision_point[1] = py;
+}
+
+void ray_vertical(float player_x, float player_y, float angle,
+                  int collision_point[]) {
+  int px = 0, py = 0, dx, dy, n = block_in_size;
+  float tan_angle = tan(angle);
+
+  if (cos(angle) > 0.0001) {
+    /* right */
+    SDL_Log("right");
+    px = ((int)(player_x / n) * n + n);
+    dx = 64;
+  }
+  if (cos(angle) < -0.0001) {
+    /* left */
+    SDL_Log("left");
+    px = ((int)(player_x / n) * n - 1);
+    dx = -64;
+  }
+  py = (int)player_y + (int)((player_x - px) * tan_angle);
+  dy = (int)(n * tan_angle);
+
+  int collision = mapX;
+  while (collision) {
+    int x = (int)px / n;
+    int y = (int)py / n;
+    int map_index = x_y_to_linear_2d_map(x, y);
+
+    if (map_index > 0 && map_index < mapX * mapY && map[map_index] != 0) {
+      SDL_Log("VERTICAL COLLISION index= %i, map[]=%i, px_i=%i, px_i=%i, "
+              "collision_steps=%i",
+              map_index, map[map_index], (int)px / n, (int)py / n,
+              mapY - collision);
+      collision = 0;
+    } else {
+      px += dx;
+      py += dy;
+      collision--;
+    }
+  }
+
+  collision_point[0] = px;
+  collision_point[1] = py;
+}
+
+float dist(float ax, float ay, float bx, float by) {
+  return sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+}
+
+void draw_ray(AppGame *App) {
+  int ray_point_horizontal[2];
+  int ray_point_vertical[2];
+  ray_horizontal(App->Player.x, App->Player.y, App->Player.angle,
+                 ray_point_horizontal);
+  ray_vertical(App->Player.x, App->Player.y, App->Player.angle,
+               ray_point_vertical);
+
+  glLineWidth(4);
+  glBegin(GL_LINES);
+  glColor3f(0, 1, 0);
+  glVertex2i(App->Player.x, App->Player.y);
+  glVertex2i(ray_point_horizontal[0], ray_point_horizontal[1]);
+  glColor3f(1, 0, 0);
+  glVertex2i(App->Player.x, App->Player.y);
+  glVertex2i(ray_point_vertical[0], ray_point_vertical[1]);
+  glEnd();
+
+  /* float dist1 = dist(App->Player.x, App->Player.y, ray_point_horizontal[0],
+   * ray_point_horizontal[1]); */
+  /* float dist2 = dist(App->Player.x, App->Player.y, ray_point_vertical[0],
+   * ray_point_vertical[1]); */
+
+  /* glLineWidth(3); */
+  /* glBegin(GL_LINES); */
+
+  /* glVertex2i(App->Player.x, App->Player.y); */
+  /* if (dist1 < dist2){ */
+  /*   glColor3f(0, 1,0); */
+  /*   SDL_Log("HORIZONTAL!!!!!!!!!!!!!!!!!!!!"); */
+  /*   glVertex2i(ray_point_horizontal[0], ray_point_horizontal[1]); */
+  /* }else{ */
+  /*   glColor3f(1, 0, 0); */
+  /*   SDL_Log("VERTICAL!!!!!!!!!!!!!!!!!!!!!!"); */
+  /*   glVertex2i(ray_point_vertical[0], ray_point_vertical[1]); */
+  /* } */
+  /* glEnd(); */
 }
 
 void drawPlayer(AppGame *App) {
@@ -106,10 +242,10 @@ void draw2DMap() {
         glColor3f(0, 0, 0);
       }
       glBegin(GL_QUADS);
-      glVertex2i(xo, yo);
-      glVertex2i(xo, yo + grid_lenth);
-      glVertex2i(xo + grid_lenth, yo + grid_lenth);
-      glVertex2i(xo + grid_lenth, yo);
+      glVertex2i(xo + 1, yo + 1);
+      glVertex2i(xo + 1, yo + grid_lenth - 1);
+      glVertex2i(xo + grid_lenth - 1, yo + grid_lenth - 1);
+      glVertex2i(xo + grid_lenth - 1, yo + 1);
       glEnd();
     }
   }
@@ -118,6 +254,7 @@ void draw2DMap() {
 void draw(AppGame *App) {
   draw2DMap();
   drawPlayer(App);
+  draw_ray(App);
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame *App, int flag) {
