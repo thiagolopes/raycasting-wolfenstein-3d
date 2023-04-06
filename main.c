@@ -40,9 +40,9 @@ SDL_GLContext sdl_gl_context;
 /* map  */
 int mapX = 8, mapY = 8, block_in_size = 64;
 int map[] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0,
-    0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1,
-    1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1,
+    0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+    1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
 
 int x_y_to_linear_2d_map(int x, int y) { return y * mapX + x; }
@@ -79,29 +79,23 @@ void updatePlayer(AppGame *App) {
   }
 
   App->Player.angle = normalizedRand(App->Player.angle);
-  /* SDL_Log("angle=%f, angle degree=%i ,x=%f, y=%f, viewx=%f ,viewy=%f", */
-  /*         App->Player.angle, rad_to_degree(App->Player.angle), App->Player.x,
-   */
-  /*         App->Player.y, App->Player.view_x, App->Player.view_y); */
 }
 
+/* TODO update to point */
+/* TODO move to ray lib */
 void ray_horizontal(float player_x, float player_y, float angle,
-                    int collision_point[]) {
+                    float collision_point[]) {
   float px = 0, py = 0, dx, dy;
   int n = block_in_size;
-
   float tan_angle = 1 / tan(angle);
 
-  SDL_Log("angle=%i", rad_to_degree(angle));
   if (angle < PI) {
     /* up */
-    SDL_Log("UP");
     py = ((int)(player_y / n) * n) - 1;
     px = player_x + ((player_y - py) * tan_angle);
     dy = -n;
   } else if (angle > PI) {
     /* down */
-    SDL_Log("DOWN");
     py = ((int)(player_y / n) * n) + n;
     px = player_x - ((py - player_y) * tan_angle);
     dy = n;
@@ -116,66 +110,50 @@ void ray_horizontal(float player_x, float player_y, float angle,
 
     if (map_index > 0 && map_index < mapX * mapY && map[map_index] == 1) {
       collision = 0;
-      collision_point[0] = px;
-      collision_point[1] = py;
     } else {
       px += dx;
       py += dy;
       collision -= 1;
     }
+    collision_point[0] = px;
+    collision_point[1] = py;
   }
-
-  glLineWidth(4);
-  glBegin(GL_LINES);
-  glColor3f(0, 1, 0);
-  glVertex2i(player_x, player_y);
-  glVertex2i(px, py);
-  glEnd();
 }
 
 void ray_vertical(float player_x, float player_y, float angle,
-                  int collision_point[]) {
-  int n = block_in_size;
+                  float collision_point[]) {
   float px = 0, py = 0, dx, dy;
-  float tan_angle = tan(angle);
+  int n = block_in_size;
+  float tan_angle = -1 / tan(angle);
 
-  if (cos(angle) > 0.0001) {
+  if (angle < PI / 2 || angle > (PI * 3) / 2) {
     /* right */
-    SDL_Log("RIGHT");
-    px = (int)player_x / n * n + n;
-    dx = 64;
-  } else if (cos(angle) < -0.0001) {
+    px = ((int)(player_x / n) * n) + n;
+    py = player_y - ((player_x - px) / tan_angle);
+    dx = n;
+  } else if (angle > PI / 2 && angle < (PI * 3) / 2) {
     /* left */
-    SDL_Log("LEFT");
-    px = (int)player_x / n * n - 1;
-    dx = -64;
-  } else {
-    collision_point[0] = player_x;
-    collision_point[1] = 100000000;
-    return;
+    px = ((int)(player_x / n) * n) - 1;
+    py = player_y + ((px - player_x) / tan_angle);
+    dx = -n;
   }
-  py = player_y + (player_x - px) * tan_angle;
-  dy = (n * tan_angle);
+  dy = dx / tan_angle;
 
   int collision = mapX;
   while (collision) {
-    int x = (int)(px / n);
-    int y = (int)(py / n);
+    int x = (int)px / n;
+    int y = (int)py / n;
     int map_index = x_y_to_linear_2d_map(x, y);
 
-    if (map_index > 0 && map_index < mapX * mapY && map[map_index] != 0) {
-      /* SDL_Log("VERTICAL COLLISION index= %i, map[]=%i, px_i=%i, px_i=%i, " */
-      /*         "collision_steps=%i", */
-      /*         map_index, map[map_index], (int)px / n, (int)py / n, */
-      /*         mapY - collision); */
+    if (map_index > 0 && map_index < mapX * mapY && map[map_index] == 1) {
       collision = 0;
-      collision_point[0] = px;
-      collision_point[1] = py;
     } else {
       px += dx;
       py += dy;
       collision -= 1;
     }
+    collision_point[0] = px;
+    collision_point[1] = py;
   }
 }
 
@@ -184,44 +162,23 @@ float dist(float ax, float ay, float bx, float by) {
 }
 
 void draw_ray(AppGame *App) {
-  int ray_point_horizontal[2];
-  /* int ray_point_vertical[2]; */
-  ray_horizontal(App->Player.x, App->Player.y, App->Player.angle,
-                 ray_point_horizontal);
-  /* ray_vertical(App->Player.x, App->Player.y, App->Player.angle, */
-  /* ray_point_vertical); */
+  float ray_point_horizontal[2], ray_point_vertical[2];
+  ray_horizontal(App->Player.x, App->Player.y, App->Player.angle, ray_point_horizontal);
+  ray_vertical(App->Player.x, App->Player.y, App->Player.angle, ray_point_vertical);
 
-  /* glLineWidth(4); */
-  /* glBegin(GL_LINES); */
-  /* glColor3f(0, 1, 0); */
-  /* glVertex2i(App->Player.x, App->Player.y); */
-  /* glVertex2i(ray_point_horizontal[0], ray_point_horizontal[1]); */
+  float dist1 = dist(App->Player.x, App->Player.y, ray_point_horizontal[0], ray_point_horizontal[1]);
+  float dist2 = dist(App->Player.x, App->Player.y, ray_point_vertical[0], ray_point_vertical[1]);
 
-  /* glColor3f(1, 0, 0); */
-  /* glVertex2i(App->Player.x, App->Player.y); */
-  /* glVertex2i(ray_point_vertical[0], ray_point_vertical[1]); */
+  glLineWidth(3);
+  glBegin(GL_LINES);
+  glVertex2i(App->Player.x, App->Player.y);
+  glColor3f(1, 0, 0);
+  if (fabsf(dist1) < fabsf(dist2)) {
+    glVertex2i(ray_point_horizontal[0], ray_point_horizontal[1]);
+  } else {
+    glVertex2i(ray_point_vertical[0], ray_point_vertical[1]);
+  }
   glEnd();
-
-  /* float dist1 = dist(App->Player.x, App->Player.y, ray_point_horizontal[0],
-   */
-  /* ray_point_horizontal[1]); */
-  /* float dist2 = dist(App->Player.x, App->Player.y, ray_point_vertical[0], */
-  /* ray_point_vertical[1]); */
-
-  /* glLineWidth(3); */
-  /* glBegin(GL_LINES); */
-
-  /* glVertex2i(App->Player.x, App->Player.y); */
-  /* if (fabsf(dist1) < fabsf(dist2)){ */
-  /*   glColor3f(0, 1,0); */
-  /*   SDL_Log("HORIZONTAL!!!!!!!!!!!!!!!!!!!!"); */
-  /*   glVertex2i(ray_point_horizontal[0], ray_point_horizontal[1]); */
-  /* }else{ */
-  /*   glColor3f(1, 0, 0); */
-  /*   SDL_Log("VERTICAL!!!!!!!!!!!!!!!!!!!!!!"); */
-  /*   glVertex2i(ray_point_vertical[0], ray_point_vertical[1]); */
-  /* } */
-  /* glEnd(); */
 }
 
 void drawPlayer(AppGame *App) {
@@ -236,8 +193,7 @@ void drawPlayer(AppGame *App) {
   glLineWidth(3);
   glBegin(GL_LINES);
   glVertex2i(App->Player.x, App->Player.y);
-  glVertex2i(App->Player.x + App->Player.view_x * 20,
-             App->Player.y + App->Player.view_y * 20);
+  glVertex2i(App->Player.x + App->Player.view_x * 20, App->Player.y + App->Player.view_y * 20);
   glEnd();
 }
 
