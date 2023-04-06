@@ -13,6 +13,10 @@
 #define ONE_RAD PI / 180
 
 typedef struct {
+  float x, y;
+} Point;
+
+typedef struct {
   int a, w, s, d;
 } ButtonKeys;
 
@@ -20,10 +24,6 @@ typedef struct {
   float x, y, view_x, view_y, angle;
   ButtonKeys Buttons;
 } Player;
-
-typedef struct {
-  float x, y, dist;
-} Ray;
 
 typedef struct {
   int screen_width;
@@ -83,8 +83,7 @@ void updatePlayer(AppGame *App) {
 
 /* TODO update to point */
 /* TODO move to ray lib */
-void ray_horizontal(float player_x, float player_y, float angle,
-                    float collision_point[]) {
+void ray_horizontal(float player_x, float player_y, float angle, Point *rnt_point) {
   float px = 0, py = 0, dx, dy;
   int n = block_in_size;
   float tan_angle = 1 / tan(angle);
@@ -115,13 +114,13 @@ void ray_horizontal(float player_x, float player_y, float angle,
       py += dy;
       collision -= 1;
     }
-    collision_point[0] = px;
-    collision_point[1] = py;
+    rnt_point->x = px;
+    rnt_point->y = py;
   }
 }
 
-void ray_vertical(float player_x, float player_y, float angle,
-                  float collision_point[]) {
+/* update to return a point instead a void */
+void ray_vertical(float player_x, float player_y, float angle, Point *rnt_point) {
   float px = 0, py = 0, dx, dy;
   int n = block_in_size;
   float tan_angle = -1 / tan(angle);
@@ -152,8 +151,8 @@ void ray_vertical(float player_x, float player_y, float angle,
       py += dy;
       collision -= 1;
     }
-    collision_point[0] = px;
-    collision_point[1] = py;
+    rnt_point->x = px;
+    rnt_point->y = py;
   }
 }
 
@@ -162,21 +161,21 @@ float dist(float ax, float ay, float bx, float by) {
 }
 
 void draw_ray(AppGame *App) {
-  float ray_point_horizontal[2], ray_point_vertical[2];
-  ray_horizontal(App->Player.x, App->Player.y, App->Player.angle, ray_point_horizontal);
-  ray_vertical(App->Player.x, App->Player.y, App->Player.angle, ray_point_vertical);
+  Point point_horizontal, point_vertical;
+  ray_horizontal(App->Player.x, App->Player.y, App->Player.angle, &point_horizontal);
+  ray_vertical(App->Player.x, App->Player.y, App->Player.angle, &point_vertical);
 
-  float dist1 = dist(App->Player.x, App->Player.y, ray_point_horizontal[0], ray_point_horizontal[1]);
-  float dist2 = dist(App->Player.x, App->Player.y, ray_point_vertical[0], ray_point_vertical[1]);
+  float dist1 = dist(App->Player.x, App->Player.y, point_horizontal.x, point_horizontal.y);
+  float dist2 = dist(App->Player.x, App->Player.y, point_vertical.x, point_vertical.y);
 
   glLineWidth(3);
   glBegin(GL_LINES);
   glVertex2i(App->Player.x, App->Player.y);
   glColor3f(1, 0, 0);
   if (fabsf(dist1) < fabsf(dist2)) {
-    glVertex2i(ray_point_horizontal[0], ray_point_horizontal[1]);
+    glVertex2i(point_horizontal.x, point_horizontal.y);
   } else {
-    glVertex2i(ray_point_vertical[0], ray_point_vertical[1]);
+    glVertex2i(point_vertical.x, point_vertical.y);
   }
   glEnd();
 }
@@ -226,37 +225,31 @@ void draw(AppGame *App) {
   draw_ray(App);
 }
 
-static void handle_key(SDL_Keysym keysym, AppGame *App, int flag) {
+static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action
+) {
   switch (keysym.sym) {
   case SDLK_ESCAPE:
     App->run_status = 0;
     break;
   case SDLK_a:
-    App->Player.Buttons.a = flag;
+    App->Player.Buttons.a = button_action;
     break;
   case SDLK_d:
-    App->Player.Buttons.d = flag;
+    App->Player.Buttons.d = button_action;
     break;
   case SDLK_w:
-    App->Player.Buttons.w = flag;
+    App->Player.Buttons.w = button_action;
     break;
   case SDLK_s:
-    App->Player.Buttons.s = flag;
+    App->Player.Buttons.s = button_action;
     break;
   }
 
-  /* SDL_Log("a=%i, d%i, w=%i, s=%i", App->Player.Buttons.a,
-   * App->Player.Buttons.d, */
-  /*         App->Player.Buttons.w, App->Player.Buttons.s); */
+  SDL_Log("a=%i, d%i, w=%i, s=%i", App->Player.Buttons.a, App->Player.Buttons.d, App->Player.Buttons.w, App->Player.Buttons.s);
 }
 
-int main(int argc, char *args[]) {
-  /* init */
-  AppGame App = {1024, 512, "Project raycasting",
-                 1,    0,   {300, 300, cos(PI2), -sin(PI2), PI2}};
-
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVERYTHING | SDL_INIT_NOPARACHUTE) <
-      0) {
+void SDLOpenGLSetup(AppGame App){
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVERYTHING | SDL_INIT_NOPARACHUTE) < 0) {
     perror(SDL_GetError());
   }
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -298,6 +291,21 @@ int main(int argc, char *args[]) {
   if (App.window_fullcreen)
     SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
 
+}
+
+void SDLOpenGLShutdown(){
+  SDL_VideoQuit();
+  SDL_GL_DeleteContext(sdl_gl_context);
+  SDL_DestroyWindow(sdl_window);
+  SDL_Quit();
+}
+
+int main(int argc, char *args[]) {
+  /* init */
+  AppGame App = {1024, 512, "Project raycasting", 1,    0,   {300, 300, cos(PI2), -sin(PI2), PI2}};
+
+  SDLOpenGLSetup(App);
+
   while (App.run_status) {
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
@@ -328,9 +336,6 @@ int main(int argc, char *args[]) {
   }
 
   /* shutdown */
-  SDL_VideoQuit();
-  SDL_GL_DeleteContext(sdl_gl_context);
-  SDL_DestroyWindow(sdl_window);
-  SDL_Quit();
+  SDLOpenGLShutdown();
   return 0;
 }
