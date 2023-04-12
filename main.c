@@ -4,24 +4,81 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_timer.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
 
 #define PI 3.14
 #define PI2 (PI * 2)
 #define ONE_RAD PI / 180
 
+int map_cols = 32;
+int map_rows = 32;
+int map_height = 32;
+int map_tile[32][32];
+
+void drawCircle(float cx, float cy, float r, int num_segments)
+{
+  float theta = 3.1415926 * 2 / num_segments;
+  float tangetial_factor = tanf(theta);
+  float radial_factor = cosf(theta);//calculate the radial factor
+  float x = r;//we start at angle = 0
+
+    float y = 0;
+    glLineWidth(2);
+    glBegin(GL_LINE_LOOP);
+    for (int ii = 0; ii < num_segments; ii++)
+    {
+        glVertex2f(x + cx, y + cy);//output vertex
+
+        //calculate the tangential vector
+        //remember, the radial vector is (x, y)
+        //to get the tangential vector we flip those coordinates and negate one of them
+
+        float tx = -y;
+        float ty = x;
+
+        //add the tangential vector
+
+        x += tx * tangetial_factor;
+        y += ty * tangetial_factor;
+
+        //correct using the radial factor
+
+        x *= radial_factor;
+        y *= radial_factor;
+    }
+    glEnd();
+}
+
 typedef struct {
   float x, y;
+} Pointf;
+
+typedef struct {
+  int x, y;
 } Point;
+
+Pointf MOUSE_POINT;
+int MOUSE_POINT_SHOW;
+Pointf INTERSECTION_POINT;
+
+typedef struct {
+  Point p1, p2;
+  float length;
+} Vector;
 
 typedef struct {
   int a, w, s, d;
 } ButtonKeys;
 
 typedef struct {
-  float x, y, view_x, view_y, angle;
+  float x, y, direction_x, direction_y, angle;
   ButtonKeys Buttons;
 } Player;
 
@@ -37,15 +94,7 @@ typedef struct {
 SDL_Window *sdl_window = NULL;
 SDL_GLContext sdl_gl_context;
 
-/* map  */
-int mapX = 8, mapY = 8, block_in_size = 64;
-int map[] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1,
-    0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
-    1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-};
-
-int x_y_to_linear_2d_map(int x, int y) { return y * mapX + x; }
+int x_y_to_linear_2d_map(int x, int y) { return y * map_cols + x; }
 
 int rad_to_degree(float angle) { return (int)(angle * 180 / PI); }
 
@@ -61,126 +110,31 @@ void updatePlayer(AppGame *App) {
   int magntude = 2;
   if (App->Player.Buttons.d == 1) {
     App->Player.angle -= ONE_RAD;
-    App->Player.view_x = cos(App->Player.angle);
-    App->Player.view_y = -sin(App->Player.angle);
+    App->Player.direction_x = cos(App->Player.angle);
+    App->Player.direction_y = -sin(App->Player.angle);
   }
   if (App->Player.Buttons.a == 1) {
     App->Player.angle += ONE_RAD;
-    App->Player.view_x = cos(App->Player.angle);
-    App->Player.view_y = -sin(App->Player.angle);
+    App->Player.direction_x = cos(App->Player.angle);
+    App->Player.direction_y = -sin(App->Player.angle);
   }
   if (App->Player.Buttons.w == 1) {
-    App->Player.x += App->Player.view_x * magntude;
-    App->Player.y += App->Player.view_y * magntude;
+    App->Player.x += App->Player.direction_x * magntude;
+    App->Player.y += App->Player.direction_y * magntude;
   }
   if (App->Player.Buttons.s == 1) {
-    App->Player.x -= App->Player.view_x * magntude;
-    App->Player.y -= App->Player.view_y * magntude;
+    App->Player.x -= App->Player.direction_x * magntude;
+    App->Player.y -= App->Player.direction_y * magntude;
   }
 
   App->Player.angle = normalizedRand(App->Player.angle);
-}
-
-/* TODO update to point */
-/* TODO move to ray lib */
-void ray_horizontal(float player_x, float player_y, float angle, Point *rnt_point) {
-  float px = 0, py = 0, dx, dy;
-  int n = block_in_size;
-  float tan_angle = 1 / tan(angle);
-
-  if (angle < PI) {
-    /* up */
-    py = ((int)(player_y / n) * n) - 1;
-    px = player_x + ((player_y - py) * tan_angle);
-    dy = -n;
-  } else if (angle > PI) {
-    /* down */
-    py = ((int)(player_y / n) * n) + n;
-    px = player_x - ((py - player_y) * tan_angle);
-    dy = n;
-  }
-  dx = -dy * tan_angle;
-
-  int collision = mapX;
-  while (collision) {
-    int x = (int)px / n;
-    int y = (int)py / n;
-    int map_index = x_y_to_linear_2d_map(x, y);
-
-    if (map_index > 0 && map_index < mapX * mapY && map[map_index] == 1) {
-      collision = 0;
-    } else {
-      px += dx;
-      py += dy;
-      collision -= 1;
-    }
-    rnt_point->x = px;
-    rnt_point->y = py;
-  }
-}
-
-/* update to return a point instead a void */
-void ray_vertical(float player_x, float player_y, float angle, Point *rnt_point) {
-  float px = 0, py = 0, dx, dy;
-  int n = block_in_size;
-  float tan_angle = -1 / tan(angle);
-
-  if (angle < PI / 2 || angle > (PI * 3) / 2) {
-    /* right */
-    px = ((int)(player_x / n) * n) + n;
-    py = player_y - ((player_x - px) / tan_angle);
-    dx = n;
-  } else if (angle > PI / 2 && angle < (PI * 3) / 2) {
-    /* left */
-    px = ((int)(player_x / n) * n) - 1;
-    py = player_y + ((px - player_x) / tan_angle);
-    dx = -n;
-  }
-  dy = dx / tan_angle;
-
-  int collision = mapX;
-  while (collision) {
-    int x = (int)px / n;
-    int y = (int)py / n;
-    int map_index = x_y_to_linear_2d_map(x, y);
-
-    if (map_index > 0 && map_index < mapX * mapY && map[map_index] == 1) {
-      collision = 0;
-    } else {
-      px += dx;
-      py += dy;
-      collision -= 1;
-    }
-    rnt_point->x = px;
-    rnt_point->y = py;
-  }
 }
 
 float dist(float ax, float ay, float bx, float by) {
   return sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
 }
 
-void draw_ray(AppGame *App) {
-  Point point_horizontal, point_vertical;
-  ray_horizontal(App->Player.x, App->Player.y, App->Player.angle, &point_horizontal);
-  ray_vertical(App->Player.x, App->Player.y, App->Player.angle, &point_vertical);
-
-  float dist1 = dist(App->Player.x, App->Player.y, point_horizontal.x, point_horizontal.y);
-  float dist2 = dist(App->Player.x, App->Player.y, point_vertical.x, point_vertical.y);
-
-  glLineWidth(3);
-  glBegin(GL_LINES);
-  glVertex2i(App->Player.x, App->Player.y);
-  glColor3f(1, 0, 0);
-  if (fabsf(dist1) < fabsf(dist2)) {
-    glVertex2i(point_horizontal.x, point_horizontal.y);
-  } else {
-    glVertex2i(point_vertical.x, point_vertical.y);
-  }
-  glEnd();
-}
-
-void drawPlayer(AppGame *App) {
+void draw_player(AppGame *App) {
   glColor3f(0, 0, 1);
   glPointSize(8);
   glBegin(GL_POINTS);
@@ -192,37 +146,67 @@ void drawPlayer(AppGame *App) {
   glLineWidth(3);
   glBegin(GL_LINES);
   glVertex2i(App->Player.x, App->Player.y);
-  glVertex2i(App->Player.x + App->Player.view_x * 20, App->Player.y + App->Player.view_y * 20);
+  glVertex2i(App->Player.x + App->Player.direction_x * 20, App->Player.y + App->Player.direction_y * 20);
   glEnd();
 }
 
-void draw2DMap() {
-  int xo, yo;
-  int grid_lenth = 512 / mapX;
-  for (int y = 0; y < mapY; y++) {
-    for (int x = 0; x < mapX; x++) {
-      int xo = x * grid_lenth;
-      int yo = y * grid_lenth;
+void draw_map_2d(){
+  float pixel_x, pixel_y;
+  for (int l=0; l<map_rows; l++){
+    for (int c=0; c<map_cols; c++){
+      if (map_tile[l][c] != 0){
+        pixel_x = l * map_height;
+        pixel_y = c * map_height;
 
-      if (map[y * mapX + x]) {
+        glBegin(GL_QUADS);
         glColor3f(1, 1, 1);
-      } else {
-        glColor3f(0, 0, 0);
+        glVertex2f(pixel_x, pixel_y);
+        glVertex2f(pixel_x, pixel_y + map_height);
+        glVertex2f(pixel_x + map_height, pixel_y + map_height);
+        glVertex2f(pixel_x + map_height, pixel_y);
+        glEnd();
       }
-      glBegin(GL_QUADS);
-      glVertex2i(xo + 1, yo + 1);
-      glVertex2i(xo + 1, yo + grid_lenth - 1);
-      glVertex2i(xo + grid_lenth - 1, yo + grid_lenth - 1);
-      glVertex2i(xo + grid_lenth - 1, yo + 1);
-      glEnd();
     }
   }
 }
 
+void draw_mouse_pointer(AppGame *App){
+  if (MOUSE_POINT_SHOW == 1){
+    /* TODO move to draw dashed */
+    glPushAttrib(GL_ENABLE_BIT);
+    /* # glPushAttrib is done to return everything to normal after drawing */
+    glColor3f(0, 1, 0);
+    glLineStipple(8, 0xAAAA);
+    glEnable(GL_LINE_STIPPLE);
+    glBegin(GL_LINES);
+    glVertex2i(App->Player.x, App->Player.y);
+    glVertex2i(MOUSE_POINT.x, MOUSE_POINT.y);
+    glEnd();
+    glPopAttrib();
+
+    drawCircle(MOUSE_POINT.x, MOUSE_POINT.y, 10, 10);
+    /* glColor3f(0, 1, 0); */
+    /* glLineWidth(2); */
+    /* glBegin(GL_LINES); */
+    /* glVertex2i(App->Player.x, App->Player.y); */
+    /* glVertex2i(MOUSE_POINT.x, MOUSE_POINT.y); */
+    /* drawCircle(MOUSE_POINT.x, MOUSE_POINT.y, 10, 10); */
+    /* glEnd(); */
+  }
+
+  if (INTERSECTION_POINT.x != 0 && INTERSECTION_POINT.y != 0){
+    glBegin(GL_POINTS);
+    glColor3f(1, 0, 0);
+    glPointSize(8);
+    glVertex2i(INTERSECTION_POINT.x, INTERSECTION_POINT.y);
+    glEnd();
+  }
+}
+
 void draw(AppGame *App) {
-  draw2DMap();
-  drawPlayer(App);
-  draw_ray(App);
+  draw_player(App);
+  draw_map_2d();
+  draw_mouse_pointer(App);
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action
@@ -293,6 +277,83 @@ void SDLOpenGLSetup(AppGame App){
 
 }
 
+void draw_dot(float x, float y){
+  glColor3f(1, 1, 1);
+  glPointSize(1);
+  glBegin(GL_POINTS);
+  glVertex2i(x, y);
+  glEnd();
+}
+
+void mouse_collision(AppGame *App){
+  Pointf point_start = {App->Player.x, App->Player.y};
+  Pointf delta = {MOUSE_POINT.x/map_height - point_start.x/map_height, MOUSE_POINT.y/map_height - point_start.y/map_height};
+
+  float point_magnitude = sqrtf(powf(delta.x, 2) + powf(delta.y, 2));
+
+  Pointf unitary_vector = {delta.x/point_magnitude, delta.y/point_magnitude};
+  Pointf unitary_step_size = {
+    sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
+    sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2))
+  };
+
+  Point tile_map_check = {truncf(point_start.x) , truncf(point_start.y)};
+  Pointf ray_length_1D;
+  Point step;
+
+  if (unitary_vector.x < 0){
+    step.x = -1;
+    ray_length_1D.x = (point_start.x - (float) tile_map_check.x) * unitary_step_size.x;
+  }
+  else{
+    step.x = 1;
+    ray_length_1D.x = (((float) tile_map_check.x + 1) - point_start.x) * unitary_step_size.x;
+  }
+
+  if (unitary_vector.y < 0){
+    step.y = -1;
+    ray_length_1D.y = (point_start.y - (float) tile_map_check.y) * unitary_step_size.y;
+  }
+  else{
+    step.y = 1;
+    ray_length_1D.y = (((float) tile_map_check.y + 1) - point_start.y) * unitary_step_size.y;
+  }
+
+
+  int bound = 0;
+  float ray_dist = 0;
+  float ray_dist_max = 500.0;
+
+  while(!bound && ray_dist < ray_dist_max){
+    /* walk */
+    if (ray_length_1D.x < ray_length_1D.y){
+      tile_map_check.x += step.x;
+      ray_dist = ray_length_1D.x;
+      ray_length_1D.x += unitary_step_size.x;
+    }
+    else{
+      tile_map_check.y += step.y;
+      ray_dist = ray_length_1D.y;
+      ray_length_1D.y += unitary_step_size.y;
+    }
+
+    /* check */
+    Point absolute_map_tile = {tile_map_check.x / map_height, tile_map_check.y / map_height};
+    if (absolute_map_tile.x >= 0 && absolute_map_tile.x < map_cols && absolute_map_tile.y >= 0 && absolute_map_tile.y < map_rows){
+      if (map_tile[absolute_map_tile.x][absolute_map_tile.y] == 1){
+        bound = 1;
+      }
+    }
+
+  }
+
+  if (bound == 1){
+    SDL_Log("COLISSION!!");
+    drawCircle(tile_map_check.x, tile_map_check.y, 10, 10);
+  }
+
+}
+
 void SDLOpenGLShutdown(){
   SDL_VideoQuit();
   SDL_GL_DeleteContext(sdl_gl_context);
@@ -300,9 +361,36 @@ void SDLOpenGLShutdown(){
   SDL_Quit();
 }
 
+#define INT(x) ((int)x)
+void handle_mouse_pressed_down(int button, float x, float y, AppGame *App){
+  switch (button) {
+  case SDL_BUTTON_LEFT:
+    map_tile[INT(truncf(x)) / map_height][INT(truncf(y)) / map_height] = 1;
+    break;
+  case SDL_BUTTON_RIGHT:
+    MOUSE_POINT_SHOW = 1;
+    MOUSE_POINT.x = x;
+    MOUSE_POINT.y = y;
+    break;
+  }
+}
+
+void handle_mouse_pressed_up(int button, float x, float y, AppGame *App){
+  switch (button) {
+  case SDL_BUTTON_LEFT:
+    break;
+  case SDL_BUTTON_RIGHT:
+    MOUSE_POINT_SHOW = 0;
+    break;
+  }
+}
+
+
+
 int main(int argc, char *args[]) {
   /* init */
-  AppGame App = {1024, 512, "Project raycasting", 1,    0,   {300, 300, cos(PI2), -sin(PI2), PI2}};
+  srand(time(NULL));
+  AppGame App = {1024, 1024, "Project raycasting", 1,    0,   {300, 300, cos(PI2), -sin(PI2), PI2}};
 
   SDLOpenGLSetup(App);
 
@@ -319,6 +407,24 @@ int main(int argc, char *args[]) {
       case SDL_KEYUP:
         handle_key(event.key.keysym, &App, 0);
         break;
+      case SDL_MOUSEMOTION:
+        if (event.motion.state == (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK)){
+          handle_mouse_pressed_down(SDL_BUTTON_LEFT, event.button.x, event.button.y, &App);
+          handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event.button.x, event.button.y, &App);
+        }
+        else if (event.motion.state == SDL_BUTTON_LMASK){
+          handle_mouse_pressed_down(SDL_BUTTON_LEFT, event.button.x, event.button.y, &App);
+        }
+        else if (event.motion.state == SDL_BUTTON_RMASK){
+          handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event.button.x, event.button.y, &App);
+        }
+        break;
+      case SDL_MOUSEBUTTONDOWN:
+        handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
+        break;
+      case SDL_MOUSEBUTTONUP:
+        handle_mouse_pressed_up(event.button.button, event.button.x, event.button.y, &App);
+        break;
       }
     }
 
@@ -330,6 +436,9 @@ int main(int argc, char *args[]) {
 
     /* draw here */
     draw(&App);
+    if (MOUSE_POINT_SHOW == 1){
+      mouse_collision(&App);
+    }
 
     /* update screen */
     SDL_GL_SwapWindow(sdl_window);
