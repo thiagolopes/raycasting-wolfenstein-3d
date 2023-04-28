@@ -251,13 +251,6 @@ void draw_mouse_pointer(AppGame *App)
         }
 }
 
-void draw(AppGame *App)
-{
-        draw_player(App);
-        draw_map_2d(App);
-        draw_mouse_pointer(App);
-}
-
 static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
 {
         switch (keysym.sym) {
@@ -461,7 +454,7 @@ void draw_3d_view_port(AppGame *App)
                 Pointf collision_wall = { 0, 0 };
                 DDA_Algorith(App, &collision_wall, &point_end);
                 if (collision_wall.x != 0 && collision_wall.y != 0) {
-                  dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
+                        dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
                         glBegin(GL_LINES);
                         glColor3f(0, 0, 1);
                         glLineWidth(1);
@@ -470,6 +463,35 @@ void draw_3d_view_port(AppGame *App)
                         glEnd();
                 }
         };
+}
+
+void draw_3d_view_flor_and_ceil(AppGame *App)
+{
+        int center_h = App->screen_heigh / 2;
+
+        glBegin(GL_QUADS);
+        glColor3f(.3, .3, .3);
+        glVertex2i(0, 0);
+        glVertex2i(App->screen_width, 0);
+        glVertex2i(App->screen_width, center_h);
+        glVertex2i(0, center_h);
+
+        glColor3f(.5, .5, .5);
+        glVertex2i(0, center_h);
+        glVertex2i(App->screen_width, center_h);
+        glVertex2i(App->screen_width, App->screen_heigh);
+        glVertex2i(0, App->screen_heigh);
+        glEnd();
+}
+
+void draw(AppGame *App)
+{
+        int fov = 70;
+        draw_3d_view_flor_and_ceil(App);
+        draw_player(App);
+        draw_map_2d(App);
+        draw_mouse_pointer(App);
+        draw_rays_view(fov, App);
 }
 
 int main(int argc, char *args[])
@@ -535,16 +557,6 @@ int main(int argc, char *args[])
 
                 /* draw here */
                 draw(&App);
-                /* draw rayview */
-                int fov = 70;
-                draw_rays_view(fov, &App);
-
-                /* draw dda Algorith */
-                if (MOUSE_POINT_SHOW == 1) {
-                        Pointf collision;
-                        DDA_Algorith(&App, &collision, &MOUSE_POINT);
-                        drawCircle(collision.x, collision.y, 10, 10);
-                }
 
                 /* update screen */
                 SDL_GL_SwapWindow(sdl_window);
