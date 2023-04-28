@@ -149,7 +149,7 @@ void draw_line(float x1, float y1, float x2, float y2)
 {
   glBegin(GL_LINES);
   glColor3f(.7, .9, .3);
-  glLineWidth(1);
+  glLineWidth(.1);
   glVertex2i(x1, y1);
   glVertex2i(x2, y2);
   glEnd();
@@ -314,7 +314,7 @@ void draw_dot(float x, float y)
   glEnd();
 }
 
-void DDA_Algorith(AppGame *App, Pointf *point_collision)
+void DDA_Algorith(AppGame *App, Pointf *point_collision, Pointf *point_direction)
 {
   int bound = 0;
   float ray_dist = 0;
@@ -322,8 +322,8 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision)
 
   Pointf point_start = {App->Player.x, App->Player.y},
          delta
-         = {MOUSE_POINT.x / App->map_height - point_start.x / App->map_height,
-            MOUSE_POINT.y / App->map_height - point_start.y / App->map_height};
+         = {point_direction->x / App->map_height - point_start.x / App->map_height,
+            point_direction->y / App->map_height - point_start.y / App->map_height};
 
   float point_magnitude = sqrtf(powf(delta.x, 2) + powf(delta.y, 2));
 
@@ -334,20 +334,19 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision)
        sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2))},
     ray_length_1D, step;
 
-  point_collision
-    = &(Pointf){.x = truncf(point_start.x), .y = truncf(point_start.y)};
+  Point tile_map_check = {truncf(point_start.x) , truncf(point_start.y)};
 
   /* set x walk */
   if(unitary_vector.x < 0)
     {
       step.x = -1;
       ray_length_1D.x
-        = (point_start.x - (float)point_collision->x) * unitary_step_size.x;
+        = (point_start.x - (float)tile_map_check.x) * unitary_step_size.x;
     }
   else
     {
       step.x = 1;
-      ray_length_1D.x = (((float)point_collision->x + 1) - point_start.x)
+      ray_length_1D.x = (((float)tile_map_check.x + 1) - point_start.x)
                         * unitary_step_size.x;
     }
 
@@ -356,12 +355,12 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision)
     {
       step.y = -1;
       ray_length_1D.y
-        = (point_start.y - (float)point_collision->y) * unitary_step_size.y;
+        = (point_start.y - (float)tile_map_check.y) * unitary_step_size.y;
     }
   else
     {
       step.y = 1;
-      ray_length_1D.y = (((float)point_collision->y + 1) - point_start.y)
+      ray_length_1D.y = (((float)tile_map_check.y + 1) - point_start.y)
                         * unitary_step_size.y;
     }
 
@@ -370,20 +369,20 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision)
       /* walk */
       if(ray_length_1D.x < ray_length_1D.y)
         {
-          point_collision->x += step.x;
+          tile_map_check.x += step.x;
           ray_dist = ray_length_1D.x;
           ray_length_1D.x += unitary_step_size.x;
         }
       else
         {
-          point_collision->y += step.y;
+          tile_map_check.y += step.y;
           ray_dist = ray_length_1D.y;
           ray_length_1D.y += unitary_step_size.y;
         }
 
       /* check */
-      Point absolute_map_tile = {point_collision->x / App->map_height,
-                                 point_collision->y / App->map_height};
+      Point absolute_map_tile = {tile_map_check.x / App->map_height,
+                                 tile_map_check.y / App->map_height};
       if(absolute_map_tile.x >= 0 && absolute_map_tile.x < App->map_cols
          && absolute_map_tile.y >= 0 && absolute_map_tile.y < App->map_rows)
         {
@@ -396,12 +395,8 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision)
 
   if(bound == 1)
     {
-      SDL_Log("COLISSION!!");
-      drawCircle(point_collision->x, point_collision->y, 10, 10);
-    }
-  else
-    {
-      point_collision = NULL;
+      point_collision->x = tile_map_check.x;
+      point_collision->y = tile_map_check.y;
     }
 }
 
@@ -508,21 +503,23 @@ int main(int argc, char *args[])
 
       /* draw rayview */
       int fov = 70;
-      int ray_lenght = 500;
       for(int i = -(fov / 2); i < fov / 2; i++)
         {
-          float angle = App.Player.angle + (ONE_RAD * i);
-          Pointf point_end = {App.Player.x + cos(angle) * ray_lenght,
-                              App.Player.y + -sin(angle) * ray_lenght};
-
-          draw_line(App.Player.x, App.Player.y, point_end.x, point_end.y);
+          float angle = normalizedRand(App.Player.angle + (ONE_RAD * i));
+          Pointf point_end = {App.Player.x + cos(angle),
+                              App.Player.y + -sin(angle)};
+          Pointf wall = {0, 0};
+          DDA_Algorith(&App, &wall, &point_end);
+          if (wall.x != 0 && wall.y != 0)
+            draw_line(App.Player.x, App.Player.y, wall.x, wall.y);
         };
 
       /* draw dda Algorith */
-      Pointf *collision, *point_start, point_end;
+      Pointf collision;
       if(MOUSE_POINT_SHOW == 1)
         {
-          DDA_Algorith(&App, collision);
+          DDA_Algorith(&App, &collision, &MOUSE_POINT);
+          drawCircle(collision.x, collision.y, 10, 10);
         }
 
       /* update screen */
