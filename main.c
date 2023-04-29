@@ -470,20 +470,26 @@ void draw_3d_view_port(int fov, AppGame *App)
 		DDA_Algorith(App, &collision_wall, &point_end, &side);
 
 		if (collision_wall.x != 0 && collision_wall.y != 0) {
-			int i_trunc = (i + hFOV);
-			float d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
-			d = d * cosf(App->Player.angle - angle); /* fix eye fish */
-
-			float project_height = (64 / d) * 1024;
-			float start_point = hH - (project_height / 2);
-			glLineWidth(32);
-			glBegin(GL_LINES);
 			if (side == 1)
 				glColor3f(0, 0, .7);
 			else
 				glColor3f(0, 0, .5);
-			glVertex2i(i * 32, start_point);
-			glVertex2i(i * 32, start_point + project_height);
+
+			int i_trunc = (i + hFOV);
+			float d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
+			d = d * cosf(App->Player.angle - angle); /* fix eye fish */
+
+			int lineH = (App->map_height * H) / (d);
+			if (lineH > H)
+				lineH = H;
+
+			int lineOff = (H / 2) - (lineH / 2);
+
+			glLineWidth(32);
+			glBegin(GL_LINES);
+
+			glVertex2i(i_trunc * 32, lineOff);
+			glVertex2i(i_trunc * 32, lineOff + lineH);
 			glEnd();
 		}
 	};
