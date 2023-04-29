@@ -16,6 +16,16 @@
 #define PI2 (PI * 2)
 #define ONE_RAD PI / 180
 
+#define FOV 60
+#define hFOV FOV / 2
+#define W 1024
+#define hW 1024 / 2
+#define H 1024
+#define hH 1024 / 2
+#define SCALE = W / (W / 2)
+
+#define dist_screen hH / tan(hFOV)
+
 int map[32][32] = {
 	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
 	{ 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -141,7 +151,7 @@ float normalizedRand(float rand)
 
 void updatePlayer(AppGame *App)
 {
-	int magntude = 2;
+	float magntude = 0.5;
 	if (App->Player.Buttons.d == 1) {
 		App->Player.angle += ONE_RAD;
 		App->Player.direction_x = cos(App->Player.angle);
@@ -460,29 +470,20 @@ void draw_3d_view_port(int fov, AppGame *App)
 		DDA_Algorith(App, &collision_wall, &point_end, &side);
 
 		if (collision_wall.x != 0 && collision_wall.y != 0) {
-			int i_trunc = (i + fov / 2);
+			int i_trunc = (i + hFOV);
 			float d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
-			/* d = d * cosf(App->Player.angle - angle); /\* fix eye fish *\/ */
+			d = d * cosf(App->Player.angle - angle); /* fix eye fish */
 
-			int pixel_wall = (int)(1024 / d);
-
-			/* fill the center of the wall in ther center of the screen */
-			int wall_start = pixel_wall / 2 + 1024 / 2;
-			if (wall_start < 0)
-				wall_start = 0;
-
-			int wall_end = -pixel_wall / 2 + 1024 / 2;
-			if (wall_end >= App->screen_heigh)
-				wall_end = App->screen_heigh - 1;
-
+			float project_height = (64 / d) * 1024;
+			float start_point = hH - (project_height / 2);
 			glLineWidth(32);
 			glBegin(GL_LINES);
 			if (side == 1)
-				glColor3f(0, 0, 1);
+				glColor3f(0, 0, .7);
 			else
-				glColor3f(0, 1, 0);
-			glVertex2i(i_trunc * App->map_height, wall_start);
-			glVertex2i(i_trunc * App->map_height, wall_end);
+				glColor3f(0, 0, .5);
+			glVertex2i(i * 32, start_point);
+			glVertex2i(i * 32, start_point + project_height);
 			glEnd();
 		}
 	};
@@ -509,19 +510,18 @@ void draw_3d_view_flor_and_ceil(AppGame *App)
 
 void draw(AppGame *App)
 {
-	int fov = 70;
-	/* draw_3d_view_flor_and_ceil(App); */
-	draw_player(App);
-	draw_map_2d(App);
-	draw_mouse_pointer(App);
-	draw_rays_view(fov, App);
-	/* draw_3d_view_port(fov, App); */
+	draw_3d_view_flor_and_ceil(App);
+	/* draw_player(App); */
+	/* draw_map_2d(App); */
+	/* draw_mouse_pointer(App); */
+	/* draw_rays_view(FOV, App); */
+	draw_3d_view_port(FOV, App);
 }
 
 int main(int argc, char *args[])
 { /* init */
 	srand(time(NULL));
-	AppGame App = { 1024, 1024, "Project raycasting", 1, 0, { 300, 300, cos(PI2), -sin(PI2), PI2 } };
+	AppGame App = { W, H, "Project raycasting", 1, 0, { 300, 300, cos(PI2), -sin(PI2), PI2 } };
 	App.map_cols = 32;
 	App.map_rows = 32;
 	App.map_height = 32;
