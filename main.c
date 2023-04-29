@@ -19,9 +19,9 @@
 #define FOV 60
 #define hFOV FOV / 2
 #define W 1024
-#define hW 1024 / 2
+#define hW W / 2
 #define H 1024
-#define hH 1024 / 2
+#define hH H / 2
 #define SCALE = W / (W / 2)
 
 #define dist_screen hH / tan(hFOV)
@@ -151,7 +151,7 @@ float normalizedRand(float rand)
 
 void updatePlayer(AppGame *App)
 {
-	float magntude = 0.5;
+	float magntude = 1;
 	if (App->Player.Buttons.d == 1) {
 		App->Player.angle += ONE_RAD;
 		App->Player.direction_x = cos(App->Player.angle);
@@ -460,7 +460,6 @@ void draw_rays_view(int fov, AppGame *App)
 
 void draw_3d_view_port(int fov, AppGame *App)
 {
-	int center_h = App->screen_heigh / 2;
 	for (int i = -(fov / 2); i < fov / 2; i++) {
 		float angle = normalizedRand(App->Player.angle + (ONE_RAD * i));
 		Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
@@ -470,26 +469,27 @@ void draw_3d_view_port(int fov, AppGame *App)
 		DDA_Algorith(App, &collision_wall, &point_end, &side);
 
 		if (collision_wall.x != 0 && collision_wall.y != 0) {
+			int i_trunc = (i + hFOV);
+			float d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
+
+			d = d * cosf(App->Player.angle - angle); /* fix eye fish */
+
+			int draw_screen_h = App->screen_heigh;
+			int line_h = (App->map_height * draw_screen_h) / (d);
+
+			if (line_h > draw_screen_h)
+				line_h = draw_screen_h;
+
+			int line_start = (draw_screen_h / 2) - (line_h / 2);
+
+			glLineWidth(App->map_height);
+			glBegin(GL_LINES);
 			if (side == 1)
 				glColor3f(0, 0, .7);
 			else
 				glColor3f(0, 0, .5);
-
-			int i_trunc = (i + hFOV);
-			float d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
-			d = d * cosf(App->Player.angle - angle); /* fix eye fish */
-
-			int lineH = (App->map_height * H) / (d);
-			if (lineH > H)
-				lineH = H;
-
-			int lineOff = (H / 2) - (lineH / 2);
-
-			glLineWidth(32);
-			glBegin(GL_LINES);
-
-			glVertex2i(i_trunc * 32, lineOff);
-			glVertex2i(i_trunc * 32, lineOff + lineH);
+			glVertex2i(i_trunc * 32, line_start);
+			glVertex2i(i_trunc * 32, line_start + line_h);
 			glEnd();
 		}
 	};
@@ -537,11 +537,18 @@ int main(int argc, char *args[])
 
 	SDLOpenGLSetup(App);
 
-	int start_time, frame_time;
-	float fps;
+	int startTime = 0;
+	int endTime = 0;
+	int delta = 0;
+	short fps = 60;
+	short timePerFrame = 16;
 
 	while (App.run_status) {
-		start_time = SDL_GetTicks();
+		if (!startTime) {
+			startTime = SDL_GetTicks();
+		} else {
+			delta = endTime - startTime;
+		}
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event) != 0) {
@@ -591,13 +598,16 @@ int main(int argc, char *args[])
 		SDL_GL_SwapWindow(sdl_window);
 
 		/* fps print */
-		frame_time = SDL_GetTicks() - start_time;
-		if (frame_time > 0)
-			fps = 1000.0 / frame_time;
-		else
-			fps = 0;
-
-		SDL_Log("FPS: %f", fps);
+		if (delta < timePerFrame) {
+			SDL_Delay(timePerFrame - delta);
+		}
+		// if delta is bigger than 16ms between frames, get the actual fps
+		if (delta > timePerFrame) {
+			fps = 1000 / delta;
+		}
+		startTime = endTime;
+		endTime = SDL_GetTicks();
+		SDL_Log("FPS: %i", fps);
 	}
 
 	/* shutdown */
