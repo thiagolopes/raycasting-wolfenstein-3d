@@ -1,4 +1,3 @@
-#include <GL/glew.h>
 #include <GL/gl.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_error.h>
@@ -11,7 +10,6 @@
 #include <SDL2/SDL_rwops.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_timer.h>
-#include <SDL2/SDL_image.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,17 +22,14 @@
 #define PI2 (PI * 2)
 #define ONE_RAD PI / 180
 
-#define FOV 60
+#define FOV 50
 #define hFOV FOV / 2
-#define W 520
-#define hW W / 2
-#define H 480
-#define hH H / 2
-#define SCALE = W / (W / 2)
+#define W 1024
+#define H 920
 
-#define dist_screen hH / tan(hFOV)
+#define INT(x) ((int)x)
 
-unsigned int TEXTURE[1];
+unsigned int TEXTURE[8];
 int map[24][24] = { { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7, 7, 7, 7, 7, 7, 7, 7 },
                     { 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7 },
                     { 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7 },
@@ -82,7 +77,9 @@ typedef struct {
 } ButtonKeys;
 
 typedef struct {
-        float x, y, direction_x, direction_y, angle;
+        float x, y;
+        double angle, direction_x, direction_y;
+        ;
         ButtonKeys Buttons;
 } Player;
 
@@ -107,7 +104,7 @@ typedef struct {
 SDL_Window *sdl_window = NULL;
 SDL_GLContext sdl_gl_context;
 
-float normalizedRand(float rand)
+float normalize_rand(float rand)
 {
         if (rand > PI2)
                 return rand - PI2;
@@ -116,7 +113,7 @@ float normalizedRand(float rand)
         return rand;
 }
 
-void updatePlayer(AppGame *App)
+void update_player(AppGame *App)
 {
         float magntude = 1;
         if (App->Player.Buttons.d == 1) {
@@ -138,92 +135,12 @@ void updatePlayer(AppGame *App)
                 App->Player.y -= App->Player.direction_y * magntude;
         }
 
-        App->Player.angle = normalizedRand(App->Player.angle);
+        App->Player.angle = normalize_rand(App->Player.angle);
 }
 
 float dist(float ax, float ay, float bx, float by)
 {
         return sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
-}
-
-void draw_line(float x1, float y1, float x2, float y2)
-{
-        glBegin(GL_LINES);
-        glColor3f(.7, .9, .3);
-        glLineWidth(.1);
-        glVertex2i(x1, y1);
-        glVertex2i(x2, y2);
-        glEnd();
-}
-
-void draw_player(AppGame *App)
-{
-        glColor3f(0, 0, 1);
-        glPointSize(8);
-        glBegin(GL_POINTS);
-        glVertex2i(App->Player.x, App->Player.y);
-        glEnd();
-
-        /* draw direction */
-        glColor3f(.5, .5, .5);
-        glLineWidth(3);
-        glBegin(GL_LINES);
-        glVertex2i(App->Player.x, App->Player.y);
-        glVertex2i(App->Player.x + App->Player.direction_x * 20, App->Player.y + App->Player.direction_y * 20);
-        glEnd();
-}
-
-void draw_map_2d(AppGame *App)
-{
-        float pixel_x, pixel_y;
-        for (int l = 0; l < App->map_rows; l++) {
-                for (int c = 0; c < App->map_cols; c++) {
-                        if (App->map_tile[c][l] != 0) {
-                                pixel_x = l * App->map_height;
-                                pixel_y = c * App->map_height;
-
-                                glBegin(GL_QUADS);
-                                glColor3f(1, 1, 1);
-                                glVertex2f(pixel_x, pixel_y);
-                                glVertex2f(pixel_x, pixel_y + App->map_height);
-                                glVertex2f(pixel_x + App->map_height, pixel_y + App->map_height);
-                                glVertex2f(pixel_x + App->map_height, pixel_y);
-                                glEnd();
-                        }
-                }
-        }
-}
-
-void draw_mouse_pointer(AppGame *App)
-{
-        if (MOUSE_POINT_SHOW == 1) {
-                /* TODO move to draw dashed */
-                glPushAttrib(GL_ENABLE_BIT);
-                /* # glPushAttrib is done to return everything to normal after drawing */
-                glColor3f(0, 1, 0);
-                glLineStipple(8, 0xAAAA);
-                glEnable(GL_LINE_STIPPLE);
-                glBegin(GL_LINES);
-                glVertex2i(App->Player.x, App->Player.y);
-                glVertex2i(MOUSE_POINT.x, MOUSE_POINT.y);
-                glEnd();
-                glPopAttrib();
-
-                /* glColor3f(0, 1, 0); */
-                /* glLineWidth(2); */
-                /* glBegin(GL_LINES); */
-                /* glVertex2i(App->Player.x, App->Player.y); */
-                /* glVertex2i(MOUSE_POINT.x, MOUSE_POINT.y); */
-                /* glEnd(); */
-        }
-
-        if (INTERSECTION_POINT.x != 0 && INTERSECTION_POINT.y != 0) {
-                glBegin(GL_POINTS);
-                glColor3f(1, 0, 0);
-                glPointSize(8);
-                glVertex2i(INTERSECTION_POINT.x, INTERSECTION_POINT.y);
-                glEnd();
-        }
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
@@ -310,7 +227,7 @@ int check_map_bound_index(int index_x, int index_y, int index_max_x, int index_m
                 return 0;
 }
 
-void DDA_Algorith(AppGame *App, Pointf *point_collision, Pointf *point_direction, int *side)
+void DDA_Algorith(AppGame *App, Pointf *point_collision, Pointf *point_direction, int *side, int *map_value)
 {
         int bound = 0;
         float ray_dist = 0;
@@ -365,8 +282,10 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision, Pointf *point_direction
                 Point absolute_map_tile = { tile_map_check.x / App->map_height, tile_map_check.y / App->map_height };
                 if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, App->map_cols, App->map_rows) ==
                             1 &&
-                    App->map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0)
+                    App->map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
                         bound = 1;
+                        *map_value = App->map_tile[absolute_map_tile.y][absolute_map_tile.x];
+                }
         }
 
         if (bound == 1) {
@@ -383,7 +302,6 @@ void SDLOpenGLShutdown()
         SDL_Quit();
 }
 
-#define INT(x) ((int)x)
 void handle_mouse_pressed_down(int button, float x, float y, AppGame *App)
 {
         switch (button) {
@@ -409,30 +327,16 @@ void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
         }
 }
 
-void draw_rays_view(int fov, AppGame *App)
-{
-        for (float i = -(fov / 2); i < fov / 2; i = i + .5) {
-                float angle = normalizedRand(App->Player.angle + (ONE_RAD * i));
-                Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
-                Pointf wall = { 0, 0 };
-                int side;
-                DDA_Algorith(App, &wall, &point_end, &side);
-                if (wall.x != 0 && wall.y != 0)
-                        draw_line(App->Player.x, App->Player.y, wall.x, wall.y);
-        };
-}
-
-void load_textures(AppGame *App, unsigned int *texture)
+void load_textures(AppGame *App, unsigned int *texture, char *texture_name)
 {
         stbi_set_flip_vertically_on_load(1);
 
         int f_width, f_height, bpp;
-        unsigned char *data = stbi_load("./wolftextures.png", &f_width, &f_height, &bpp, 0);
+        unsigned char *data = stbi_load(texture_name, &f_width, &f_height, &bpp, 0);
         if (!data) {
                 SDL_Log("load data error");
         }
         /* init texture from file */
-        glGenTextures(1, texture);
         glBindTexture(GL_TEXTURE_2D, *texture);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
@@ -443,6 +347,7 @@ void load_textures(AppGame *App, unsigned int *texture)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, f_width, f_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
         stbi_image_free(data);
 }
 
@@ -450,28 +355,28 @@ void load_textures(AppGame *App, unsigned int *texture)
 void draw_3d_view_port(int fov, AppGame *App)
 {
         int wall_high = 64, player_high = 32, pixels_cols = App->screen_width;
-        float fov_in_rad = fov * ONE_RAD, hfov_in_rad = (fov / 2) * ONE_RAD;
-        float pixel_in_rad = fov_in_rad / pixels_cols;
+        double fov_in_rad = fov * ONE_RAD, hfov_in_rad = (fov / 2) * ONE_RAD;
+        double pixel_in_rad = fov_in_rad / pixels_cols;
         int half_block_size = wall_high / 2;
 
         for (int i = 0; i < pixels_cols; i++) {
-                float angle = normalizedRand(normalizedRand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
+                double angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
                 Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
                 Pointf collision_wall = { 0, 0 };
                 int side;
+                int map_value;
 
-                DDA_Algorith(App, &collision_wall, &point_end, &side);
+                DDA_Algorith(App, &collision_wall, &point_end, &side, &map_value);
 
                 if (collision_wall.x != 0 && collision_wall.y != 0) {
-                        float d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
-
+                        double d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
                         d = d * cosf(App->Player.angle - angle); /* fix eye fish */
 
                         int draw_screen_h = App->screen_heigh;
                         int line_h = (App->map_height * draw_screen_h) / (d);
                         int line_start = (draw_screen_h / 2) - (line_h / 2);
 
-                        float wall_hit = 0.0;
+                        double wall_hit = 0.0;
                         if (side == 1) {
                                 wall_hit = ((int)collision_wall.x % wall_high);
                         } else {
@@ -480,14 +385,13 @@ void draw_3d_view_port(int fov, AppGame *App)
                         wall_hit = wall_hit / wall_high;
 
                         /* 3drender here, TODO move  */
-
-                        /* glColor4f(1, 1, 1, 1.0); */
+                        glColor3f(1, 1, 1);
                         glEnable(GL_TEXTURE_2D);
+                        glBindTexture(GL_TEXTURE_2D, App->texture[map_value - 1]);
                         glBegin(GL_QUADS);
-                        glBindTexture(GL_TEXTURE_2D, App->texture[0]);
-                        SDL_Log("wall_hit=%f", wall_hit);
-                        float left_of = wall_hit - ((1 / wall_high) / 2);
-                        float right_of = wall_hit + ((1 / wall_high) / 2);
+
+                        double left_of = wall_hit - ((1 / wall_high) / 2);
+                        double right_of = wall_hit + ((1 / wall_high) / 2);
 
                         glTexCoord2f(left_of, 1.0);
                         glVertex2i(i, line_start);
@@ -512,13 +416,13 @@ void draw_3d_view_flor_and_ceil(AppGame *App)
         int center_h = App->screen_heigh / 2;
 
         glBegin(GL_QUADS);
-        glColor3f(.3, .3, .3);
+        glColor3f(.2, .2, .2);
         glVertex2i(0, 0);
         glVertex2i(App->screen_width, 0);
         glVertex2i(App->screen_width, center_h);
         glVertex2i(0, center_h);
 
-        glColor3f(.5, .5, .5);
+        glColor3f(.4, .4, .4);
         glVertex2i(0, center_h);
         glVertex2i(App->screen_width, center_h);
         glVertex2i(App->screen_width, App->screen_heigh);
@@ -529,15 +433,11 @@ void draw_3d_view_flor_and_ceil(AppGame *App)
 void draw(AppGame *App)
 {
         draw_3d_view_flor_and_ceil(App);
-        /* draw_player(App); */
-        /* draw_map_2d(App); */
-        /* draw_mouse_pointer(App); */
-        /* draw_rays_view(FOV, App); */
         draw_3d_view_port(FOV, App);
 }
 
 int main(int argc, char *args[])
-{ /* init */
+{
         srand(time(NULL));
         AppGame App = { W, H, "Project raycasting", 1, 0, { 300, 300, cos(PI2), -sin(PI2), PI2 } };
         App.map_cols = 24;
@@ -555,8 +455,19 @@ int main(int argc, char *args[])
         short fps = 60;
         short timePerFrame = 16;
 
-        load_textures(&App, &TEXTURE[0]);
+        glGenTextures(8, TEXTURE);
+
+        load_textures(&App, &TEXTURE[0], "./eagle.png");
+        load_textures(&App, &TEXTURE[1], "./redbrick.png");
+        load_textures(&App, &TEXTURE[2], "./purplestone.png");
+        load_textures(&App, &TEXTURE[3], "./greystone.png");
+        load_textures(&App, &TEXTURE[4], "./bluestone.png");
+        load_textures(&App, &TEXTURE[5], "./mossy.png");
+        load_textures(&App, &TEXTURE[6], "./wood.png");
+        load_textures(&App, &TEXTURE[7], "./colorstone.png");
+
         App.texture = TEXTURE;
+
         while (App.run_status) {
                 if (!startTime) {
                         startTime = SDL_GetTicks();
@@ -604,7 +515,7 @@ int main(int argc, char *args[])
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 /* update here */
-                updatePlayer(&App);
+                update_player(&App);
 
                 /* draw here */
                 draw(&App);
