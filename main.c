@@ -457,14 +457,14 @@ int main(int argc, char *args[])
 
         glGenTextures(8, TEXTURE);
 
-        load_textures(&App, &TEXTURE[0], "./eagle.png");
-        load_textures(&App, &TEXTURE[1], "./redbrick.png");
-        load_textures(&App, &TEXTURE[2], "./purplestone.png");
-        load_textures(&App, &TEXTURE[3], "./greystone.png");
-        load_textures(&App, &TEXTURE[4], "./bluestone.png");
-        load_textures(&App, &TEXTURE[5], "./mossy.png");
-        load_textures(&App, &TEXTURE[6], "./wood.png");
-        load_textures(&App, &TEXTURE[7], "./colorstone.png");
+        load_textures(&App, &TEXTURE[0], "./textures/eagle.png");
+        load_textures(&App, &TEXTURE[1], "./textures/redbrick.png");
+        load_textures(&App, &TEXTURE[2], "./textures/purplestone.png");
+        load_textures(&App, &TEXTURE[3], "./textures/greystone.png");
+        load_textures(&App, &TEXTURE[4], "./textures/bluestone.png");
+        load_textures(&App, &TEXTURE[5], "./textures/mossy.png");
+        load_textures(&App, &TEXTURE[6], "./textures/wood.png");
+        load_textures(&App, &TEXTURE[7], "./textures/colorstone.png");
 
         App.texture = TEXTURE;
 
