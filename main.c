@@ -26,14 +26,15 @@
 
 #define FOV 60
 #define hFOV FOV / 2
-#define W 1920
+#define W 520
 #define hW W / 2
-#define H 1080
+#define H 480
 #define hH H / 2
 #define SCALE = W / (W / 2)
 
 #define dist_screen hH / tan(hFOV)
 
+unsigned int TEXTURE[1];
 int map[24][24] = { { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7, 7, 7, 7, 7, 7, 7, 7 },
                     { 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7 },
                     { 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7 },
@@ -58,41 +59,6 @@ int map[24][24] = { { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7, 7, 7, 7
                     { 4, 0, 6, 0, 6, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 5, 0, 0, 2, 0, 0, 0, 2 },
                     { 4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2 },
                     { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3 } };
-
-/* int map[32][32] = { */
-/*         { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, */
-/*         { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, */
-/* }; */
 
 typedef struct {
         float x, y;
@@ -134,6 +100,8 @@ typedef struct {
         int map_height;
         int map_tile[32][32];
 
+        /* engine */
+        unsigned int *texture;
 } AppGame;
 
 SDL_Window *sdl_window = NULL;
@@ -454,12 +422,40 @@ void draw_rays_view(int fov, AppGame *App)
         };
 }
 
+void load_textures(AppGame *App, unsigned int *texture)
+{
+        stbi_set_flip_vertically_on_load(1);
+
+        int f_width, f_height, bpp;
+        unsigned char *data = stbi_load("./wolftextures.png", &f_width, &f_height, &bpp, 0);
+        if (!data) {
+                SDL_Log("load data error");
+        }
+        /* init texture from file */
+        glGenTextures(1, texture);
+        glBindTexture(GL_TEXTURE_2D, *texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                        GL_CLAMP_TO_EDGE); // set texture wrapping to GL_REPEAT (default wrapping method)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, f_width, f_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
+}
+
+/* move from float to double */
 void draw_3d_view_port(int fov, AppGame *App)
 {
-        int block_size = 32;
-        int half_block_size = block_size / 2;
-        for (int i = -(fov / 2); i < fov / 2; i++) {
-                float angle = normalizedRand(App->Player.angle + (ONE_RAD * i));
+        int wall_high = 64, player_high = 32, pixels_cols = App->screen_width;
+        float fov_in_rad = fov * ONE_RAD, hfov_in_rad = (fov / 2) * ONE_RAD;
+        float pixel_in_rad = fov_in_rad / pixels_cols;
+        int half_block_size = wall_high / 2;
+
+        for (int i = 0; i < pixels_cols; i++) {
+                float angle = normalizedRand(normalizedRand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
                 Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
                 Pointf collision_wall = { 0, 0 };
                 int side;
@@ -467,72 +463,48 @@ void draw_3d_view_port(int fov, AppGame *App)
                 DDA_Algorith(App, &collision_wall, &point_end, &side);
 
                 if (collision_wall.x != 0 && collision_wall.y != 0) {
-                        float i_trunc = (i + hFOV);
                         float d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
 
                         d = d * cosf(App->Player.angle - angle); /* fix eye fish */
 
                         int draw_screen_h = App->screen_heigh;
                         int line_h = (App->map_height * draw_screen_h) / (d);
-
-                        if (line_h > draw_screen_h)
-                                line_h = draw_screen_h;
-
                         int line_start = (draw_screen_h / 2) - (line_h / 2);
-
-                        /* find where the ray hit */
 
                         float wall_hit = 0.0;
                         if (side == 1) {
-                                wall_hit = ((int)collision_wall.x % block_size);
+                                wall_hit = ((int)collision_wall.x % wall_high);
                         } else {
-                                wall_hit = ((int)collision_wall.y % block_size);
+                                wall_hit = ((int)collision_wall.y % wall_high);
                         }
+                        wall_hit = wall_hit / wall_high;
 
                         /* 3drender here, TODO move  */
-                        /* load file */
-                        stbi_set_flip_vertically_on_load(1);
 
-                        int f_width, f_height, bpp;
-                        unsigned char *data = stbi_load("./wolftextures.png", &f_width, &f_height, &bpp, 0);
-                        if (!data) {
-                                SDL_Log("load data error");
-                        }
-                        /* init texture from file */
-                        unsigned int texture;
-
-                        glColor4f(1, 1, 1, 1.0);
-                        glGenTextures(1, &texture);
-                        glBindTexture(GL_TEXTURE_2D, texture);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, f_width, f_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-                        glBindTexture(GL_TEXTURE_2D, texture);
-
+                        /* glColor4f(1, 1, 1, 1.0); */
                         glEnable(GL_TEXTURE_2D);
                         glBegin(GL_QUADS);
-
-                        float left_of = .0;
-                        float right_of = 1.0;
+                        glBindTexture(GL_TEXTURE_2D, App->texture[0]);
+                        SDL_Log("wall_hit=%f", wall_hit);
+                        float left_of = wall_hit - ((1 / wall_high) / 2);
+                        float right_of = wall_hit + ((1 / wall_high) / 2);
 
                         glTexCoord2f(left_of, 1.0);
-                        glVertex2i((i_trunc * block_size) - half_block_size, line_start);
+                        glVertex2i(i, line_start);
 
                         glTexCoord2f(right_of, 1.0);
-                        glVertex2i((i_trunc * block_size) + half_block_size, line_start);
+                        glVertex2i(i + 1, line_start);
 
                         glTexCoord2f(right_of, 0);
-                        glVertex2i((i_trunc * block_size) + half_block_size, line_start + line_h);
+                        glVertex2i(i + 1, line_start + line_h);
 
                         glTexCoord2f(left_of, .0);
-                        glVertex2i((i_trunc * block_size) - half_block_size, line_start + line_h);
+                        glVertex2i(i, line_start + line_h);
 
                         glEnd();
                         glDisable(GL_TEXTURE_2D);
-
-                        stbi_image_free(data);
                 }
-        };
+        }
 }
 
 void draw_3d_view_flor_and_ceil(AppGame *App)
@@ -583,6 +555,8 @@ int main(int argc, char *args[])
         short fps = 60;
         short timePerFrame = 16;
 
+        load_textures(&App, &TEXTURE[0]);
+        App.texture = TEXTURE;
         while (App.run_status) {
                 if (!startTime) {
                         startTime = SDL_GetTicks();
@@ -642,7 +616,7 @@ int main(int argc, char *args[])
                 /* if (delta < timePerFrame) { */
                 /* SDL_Delay(timePerFrame - delta); */
                 /* } */
-                // if delta is bigger than 16ms between frames, get the actual fps
+                /* if delta is bigger than 16ms between frames, get the actual fps */
                 if (delta > timePerFrame) {
                         fps = 1000 / delta;
                 }
