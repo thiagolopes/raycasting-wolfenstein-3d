@@ -1,16 +1,24 @@
+#include <GL/glew.h>
 #include <GL/gl.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_log.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_rwops.h>
+#include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_image.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #define PI 3.14
 #define PI2 (PI * 2)
@@ -18,9 +26,9 @@
 
 #define FOV 60
 #define hFOV FOV / 2
-#define W 1024
+#define W 720
 #define hW W / 2
-#define H 1024
+#define H 480
 #define hH H / 2
 #define SCALE = W / (W / 2)
 
@@ -60,40 +68,6 @@ int map[32][32] = {
         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
         { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
 };
-
-void drawCircle(float cx, float cy, float r, int num_segments)
-{
-        float theta = 3.1415926 * 2 / num_segments;
-        float tangetial_factor = tanf(theta);
-        float radial_factor = cosf(theta); // calculate the radial factor
-        float x = r; // we start at angle = 0
-
-        float y = 0;
-        glLineWidth(2);
-        glBegin(GL_LINE_LOOP);
-        for (int ii = 0; ii < num_segments; ii++) {
-                glVertex2f(x + cx, y + cy); // output vertex
-
-                // calculate the tangential vector
-                // remember, the radial vector is (x, y)
-                // to get the tangential vector we flip those coordinates and negate one
-                // of them
-
-                float tx = -y;
-                float ty = x;
-
-                // add the tangential vector
-
-                x += tx * tangetial_factor;
-                y += ty * tangetial_factor;
-
-                // correct using the radial factor
-
-                x *= radial_factor;
-                y *= radial_factor;
-        }
-        glEnd();
-}
 
 typedef struct {
         float x, y;
@@ -242,13 +216,11 @@ void draw_mouse_pointer(AppGame *App)
                 glEnd();
                 glPopAttrib();
 
-                drawCircle(MOUSE_POINT.x, MOUSE_POINT.y, 10, 10);
                 /* glColor3f(0, 1, 0); */
                 /* glLineWidth(2); */
                 /* glBegin(GL_LINES); */
                 /* glVertex2i(App->Player.x, App->Player.y); */
                 /* glVertex2i(MOUSE_POINT.x, MOUSE_POINT.y); */
-                /* drawCircle(MOUSE_POINT.x, MOUSE_POINT.y, 10, 10); */
                 /* glEnd(); */
         }
 
@@ -321,7 +293,6 @@ void SDLOpenGLSetup(AppGame App)
         glLoadIdentity();
         glOrtho(0, App.screen_width, App.screen_heigh, 0, 1, -1);
         glMatrixMode(GL_MODELVIEW);
-        glEnable(GL_TEXTURE_2D);
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -447,7 +418,7 @@ void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
 
 void draw_rays_view(int fov, AppGame *App)
 {
-        for (int i = -(fov / 2); i < fov / 2; i++) {
+        for (float i = -(fov / 2); i < fov / 2; i = i + .5) {
                 float angle = normalizedRand(App->Player.angle + (ONE_RAD * i));
                 Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
                 Pointf wall = { 0, 0 };
@@ -460,6 +431,8 @@ void draw_rays_view(int fov, AppGame *App)
 
 void draw_3d_view_port(int fov, AppGame *App)
 {
+        int block_size = 32;
+        int half_block_size = block_size / 2;
         for (int i = -(fov / 2); i < fov / 2; i++) {
                 float angle = normalizedRand(App->Player.angle + (ONE_RAD * i));
                 Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
@@ -469,7 +442,7 @@ void draw_3d_view_port(int fov, AppGame *App)
                 DDA_Algorith(App, &collision_wall, &point_end, &side);
 
                 if (collision_wall.x != 0 && collision_wall.y != 0) {
-                        int i_trunc = (i + hFOV);
+                        float i_trunc = (i + hFOV);
                         float d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
 
                         d = d * cosf(App->Player.angle - angle); /* fix eye fish */
@@ -482,15 +455,57 @@ void draw_3d_view_port(int fov, AppGame *App)
 
                         int line_start = (draw_screen_h / 2) - (line_h / 2);
 
-                        glLineWidth(App->map_height);
-                        glBegin(GL_LINES);
-                        if (side == 1)
-                                glColor3f(0, 0, .7);
-                        else
-                                glColor3f(0, 0, .5);
-                        glVertex2i(i_trunc * 32, line_start);
-                        glVertex2i(i_trunc * 32, line_start + line_h);
+                        /* find where the ray hit */
+
+                        float wall_hit = 0.0;
+                        if (side == 1) {
+                                wall_hit = ((int)collision_wall.x % block_size);
+                        } else {
+                                wall_hit = ((int)collision_wall.y % block_size);
+                        }
+
+                        /* 3drender here, TODO move  */
+                        /* load file */
+                        stbi_set_flip_vertically_on_load(1);
+
+                        int f_width, f_height, bpp;
+                        unsigned char *data = stbi_load("./wolftextures.png", &f_width, &f_height, &bpp, 0);
+                        if (!data) {
+                                SDL_Log("load data error");
+                        }
+                        /* init texture from file */
+                        unsigned int texture;
+
+                        glColor4f(1, 1, 1, 1.0);
+                        glGenTextures(1, &texture);
+                        glBindTexture(GL_TEXTURE_2D, texture);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, f_width, f_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+                        glBindTexture(GL_TEXTURE_2D, texture);
+
+                        glEnable(GL_TEXTURE_2D);
+                        glBegin(GL_QUADS);
+
+                        float left_of = .0;
+                        float right_of = 1.0;
+
+                        glTexCoord2f(left_of, 1.0);
+                        glVertex2i((i_trunc * block_size) - half_block_size, line_start);
+
+                        glTexCoord2f(right_of, 1.0);
+                        glVertex2i((i_trunc * block_size) + half_block_size, line_start);
+
+                        glTexCoord2f(right_of, 0);
+                        glVertex2i((i_trunc * block_size) + half_block_size, line_start + line_h);
+
+                        glTexCoord2f(left_of, .0);
+                        glVertex2i((i_trunc * block_size) - half_block_size, line_start + line_h);
+
                         glEnd();
+                        glDisable(GL_TEXTURE_2D);
+
+                        stbi_image_free(data);
                 }
         };
 }
@@ -586,7 +601,8 @@ int main(int argc, char *args[])
                 }
 
                 /* clear screen */
-                glClear(GL_COLOR_BUFFER_BIT);
+                glClearColor(.0f, .0f, .0f, .0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 /* update here */
                 updatePlayer(&App);
@@ -598,9 +614,9 @@ int main(int argc, char *args[])
                 SDL_GL_SwapWindow(sdl_window);
 
                 /* fps print */
-                if (delta < timePerFrame) {
-                        SDL_Delay(timePerFrame - delta);
-                }
+                /* if (delta < timePerFrame) { */
+                /* SDL_Delay(timePerFrame - delta); */
+                /* } */
                 // if delta is bigger than 16ms between frames, get the actual fps
                 if (delta > timePerFrame) {
                         fps = 1000 / delta;
