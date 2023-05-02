@@ -73,7 +73,7 @@ typedef struct {
 } Vector;
 
 typedef struct {
-        int a, w, s, d;
+        int a, w, s, d, shift;
 } ButtonKeys;
 
 typedef struct {
@@ -116,6 +116,9 @@ float normalize_rand(float rand)
 void update_player(AppGame *App)
 {
         float magntude = 1;
+        if (App->Player.Buttons.shift == 1)
+                magntude = 2;
+
         if (App->Player.Buttons.d == 1) {
                 App->Player.angle += ONE_RAD;
                 App->Player.direction_x = cos(App->Player.angle);
@@ -160,6 +163,9 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
                 break;
         case SDLK_s:
                 App->Player.Buttons.s = button_action;
+                break;
+        case SDLK_LSHIFT:
+                App->Player.Buttons.shift = button_action;
                 break;
         }
 
@@ -227,7 +233,7 @@ int check_map_bound_index(int index_x, int index_y, int index_max_x, int index_m
                 return 0;
 }
 
-void DDA_Algorith(AppGame *App, Pointf *point_collision, Pointf *point_direction, int *side, int *map_value)
+void DDA_Algorith(AppGame *App, Point *point_collision_map, Pointf *point_direction, int *side, int *map_value)
 {
         int bound = 0;
         float ray_dist = 0;
@@ -244,24 +250,24 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision, Pointf *point_direction
                                      sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)) },
                ray_length_1D, step;
 
-        Point tile_map_check = { truncf(point_start.x), truncf(point_start.y) };
+        Pointf tile_map_check = { truncf(point_start.x), truncf(point_start.y) };
 
         /* set x walk */
         if (unitary_vector.x < 0) {
                 step.x = -1;
-                ray_length_1D.x = (point_start.x - (float)tile_map_check.x) * unitary_step_size.x;
+                ray_length_1D.x = (point_start.x - tile_map_check.x) * unitary_step_size.x;
         } else {
                 step.x = 1;
-                ray_length_1D.x = (((float)tile_map_check.x + 1) - point_start.x) * unitary_step_size.x;
+                ray_length_1D.x = ((tile_map_check.x + 1) - point_start.x) * unitary_step_size.x;
         }
 
         /* set y walk */
         if (unitary_vector.y < 0) {
                 step.y = -1;
-                ray_length_1D.y = (point_start.y - (float)tile_map_check.y) * unitary_step_size.y;
+                ray_length_1D.y = (point_start.y - tile_map_check.y) * unitary_step_size.y;
         } else {
                 step.y = 1;
-                ray_length_1D.y = (((float)tile_map_check.y + 1) - point_start.y) * unitary_step_size.y;
+                ray_length_1D.y = ((tile_map_check.y + 1) - point_start.y) * unitary_step_size.y;
         }
 
         while (!bound && ray_dist < ray_dist_max_walk) {
@@ -289,8 +295,8 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision, Pointf *point_direction
         }
 
         if (bound == 1) {
-                point_collision->x = tile_map_check.x;
-                point_collision->y = tile_map_check.y;
+                point_collision_map->x = tile_map_check.x;
+                point_collision_map->y = tile_map_check.y;
         }
 }
 
@@ -362,7 +368,7 @@ void draw_3d_view_port(int fov, AppGame *App)
         for (int i = 0; i < pixels_cols; i++) {
                 double angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
                 Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
-                Pointf collision_wall = { 0, 0 };
+                Point collision_wall = { 0, 0 };
                 int side;
                 int map_value;
 
@@ -378,30 +384,20 @@ void draw_3d_view_port(int fov, AppGame *App)
 
                         double wall_hit = 0.0;
                         if (side == 1) {
-                                wall_hit = ((int)collision_wall.x % wall_high);
+                                wall_hit = (double)(collision_wall.x % wall_high) / wall_high;
                         } else {
-                                wall_hit = ((int)collision_wall.y % wall_high);
+                                wall_hit = (double)(collision_wall.y % wall_high) / wall_high;
                         }
-                        wall_hit = wall_hit / wall_high;
 
                         /* 3drender here, TODO move  */
                         glColor3f(1, 1, 1);
                         glEnable(GL_TEXTURE_2D);
                         glBindTexture(GL_TEXTURE_2D, App->texture[map_value - 1]);
-                        glBegin(GL_QUADS);
+                        glBegin(GL_LINES);
 
-                        double left_of = wall_hit - ((1 / wall_high) / 2);
-                        double right_of = wall_hit + ((1 / wall_high) / 2);
-
+                        double left_of = wall_hit;
                         glTexCoord2f(left_of, 1.0);
                         glVertex2i(i, line_start);
-
-                        glTexCoord2f(right_of, 1.0);
-                        glVertex2i(i + 1, line_start);
-
-                        glTexCoord2f(right_of, 0);
-                        glVertex2i(i + 1, line_start + line_h);
-
                         glTexCoord2f(left_of, .0);
                         glVertex2i(i, line_start + line_h);
 
@@ -416,7 +412,7 @@ void draw_3d_view_flor_and_ceil(AppGame *App)
         int center_h = App->screen_heigh / 2;
 
         glBegin(GL_QUADS);
-        glColor3f(.2, .2, .2);
+        glColor3f(.0, .0, .0);
         glVertex2i(0, 0);
         glVertex2i(App->screen_width, 0);
         glVertex2i(App->screen_width, center_h);
