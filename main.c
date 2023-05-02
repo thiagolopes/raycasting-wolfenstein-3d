@@ -22,10 +22,10 @@
 #define PI2 (PI * 2)
 #define ONE_RAD PI / 180
 
-#define FOV 50
+#define FOV 70
 #define hFOV FOV / 2
-#define W 1024
-#define H 920
+#define W 1920
+#define H 1080
 
 #define INT(x) ((int)x)
 
@@ -40,7 +40,7 @@ int map[24][24] = { { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7, 7, 7, 7
                     { 4, 0, 6, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 8 },
                     { 4, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 1 },
                     { 4, 0, 8, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 8 },
-                    { 4, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 7, 7, 7, 1 },
+                    { 4, 0, 8, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 7, 7, 7, 1 },
                     { 4, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 0, 5, 5, 5, 5, 7, 7, 7, 7, 7, 7, 7, 1 },
                     { 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6 },
                     { 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4 },
@@ -188,8 +188,8 @@ void SDLOpenGLSetup(AppGame App)
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-        sdl_window = SDL_CreateWindow(App.window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, App.screen_width,
-                                      App.screen_heigh, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+        sdl_window = SDL_CreateWindow(App.window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                      App.screen_width, App.screen_heigh, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
         if (sdl_window == NULL) {
                 perror(SDL_GetError());
         }
@@ -233,7 +233,8 @@ int check_map_bound_index(int index_x, int index_y, int index_max_x, int index_m
                 return 0;
 }
 
-void DDA_Algorith(AppGame *App, Point *point_collision_map, Pointf *point_direction, int *side, int *map_value)
+void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direction, int *side, int *map_value,
+                  float *dist)
 {
         int bound = 0;
         float ray_dist = 0;
@@ -295,8 +296,11 @@ void DDA_Algorith(AppGame *App, Point *point_collision_map, Pointf *point_direct
         }
 
         if (bound == 1) {
-                point_collision_map->x = tile_map_check.x;
-                point_collision_map->y = tile_map_check.y;
+                /* point_collision_map->x = tile_map_check.x; */
+                /* point_collision_map->y = tile_map_check.y; */
+
+                point_collision_map->x = point_start.x + unitary_vector.x * ray_dist;
+                point_collision_map->y = point_start.y + unitary_vector.y * ray_dist;
         }
 }
 
@@ -346,8 +350,8 @@ void load_textures(AppGame *App, unsigned int *texture, char *texture_name)
         glBindTexture(GL_TEXTURE_2D, *texture);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                        GL_CLAMP_TO_EDGE); // set texture wrapping to GL_REPEAT (default wrapping method)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                        GL_CLAMP_TO_BORDER); // set texture wrapping to GL_REPEAT (default wrapping method)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -360,19 +364,19 @@ void load_textures(AppGame *App, unsigned int *texture, char *texture_name)
 /* move from float to double */
 void draw_3d_view_port(int fov, AppGame *App)
 {
-        int wall_high = 64, player_high = 32, pixels_cols = App->screen_width;
+        int wall_high = 64, pixels_cols = App->screen_width;
         double fov_in_rad = fov * ONE_RAD, hfov_in_rad = (fov / 2) * ONE_RAD;
         double pixel_in_rad = fov_in_rad / pixels_cols;
-        int half_block_size = wall_high / 2;
 
         for (int i = 0; i < pixels_cols; i++) {
                 double angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
                 Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
-                Point collision_wall = { 0, 0 };
+                Pointf collision_wall = { 0, 0 };
                 int side;
                 int map_value;
+                float d2;
 
-                DDA_Algorith(App, &collision_wall, &point_end, &side, &map_value);
+                DDA_Algorith(App, &collision_wall, &point_end, &side, &map_value, &d2);
 
                 if (collision_wall.x != 0 && collision_wall.y != 0) {
                         double d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
@@ -382,11 +386,12 @@ void draw_3d_view_port(int fov, AppGame *App)
                         int line_h = (App->map_height * draw_screen_h) / (d);
                         int line_start = (draw_screen_h / 2) - (line_h / 2);
 
-                        double wall_hit = 0.0;
+                        double wall_hit;
                         if (side == 1) {
-                                wall_hit = (double)(collision_wall.x % wall_high) / wall_high;
+                                /* for some reason wall_high is divived by 2 */
+                                wall_hit = (double)((int)collision_wall.x % (wall_high / 2)) / (wall_high / 2);
                         } else {
-                                wall_hit = (double)(collision_wall.y % wall_high) / wall_high;
+                                wall_hit = (double)((int)collision_wall.y % (wall_high / 2)) / (wall_high / 2);
                         }
 
                         /* 3drender here, TODO move  */
@@ -395,10 +400,9 @@ void draw_3d_view_port(int fov, AppGame *App)
                         glBindTexture(GL_TEXTURE_2D, App->texture[map_value - 1]);
                         glBegin(GL_LINES);
 
-                        double left_of = wall_hit;
-                        glTexCoord2f(left_of, 1.0);
+                        glTexCoord2f(wall_hit, 1.0);
                         glVertex2i(i, line_start);
-                        glTexCoord2f(left_of, .0);
+                        glTexCoord2f(wall_hit, 0.0);
                         glVertex2i(i, line_start + line_h);
 
                         glEnd();
