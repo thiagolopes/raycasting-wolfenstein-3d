@@ -1,19 +1,12 @@
 #include <GL/gl.h>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_error.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_log.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_rwops.h>
-#include <SDL2/SDL_surface.h>
-#include <SDL2/SDL_timer.h>
-#include <SDL2/SDL_video.h>
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
 
 #define STB_IMAGE_IMPLEMENTATION
