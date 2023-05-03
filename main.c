@@ -10,6 +10,7 @@
 #include <SDL2/SDL_rwops.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_video.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +41,7 @@ int map[24][24] = { { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7, 7, 7, 7
                     { 4, 0, 6, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 8 },
                     { 4, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 1 },
                     { 4, 0, 8, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 8 },
-                    { 4, 0, 8, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 7, 7, 7, 1 },
+                    { 4, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 7, 7, 7, 1 },
                     { 4, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 0, 5, 5, 5, 5, 7, 7, 7, 7, 7, 7, 7, 1 },
                     { 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6 },
                     { 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4 },
@@ -449,12 +450,6 @@ int main(int argc, char *args[])
 
         SDLOpenGLSetup(App);
 
-        int startTime = 0;
-        int endTime = 0;
-        int delta = 0;
-        short fps = 60;
-        short timePerFrame = 16;
-
         glGenTextures(8, TEXTURE);
 
         load_textures(&App, &TEXTURE[0], "./textures/eagle.png");
@@ -465,16 +460,9 @@ int main(int argc, char *args[])
         load_textures(&App, &TEXTURE[5], "./textures/mossy.png");
         load_textures(&App, &TEXTURE[6], "./textures/wood.png");
         load_textures(&App, &TEXTURE[7], "./textures/colorstone.png");
-
         App.texture = TEXTURE;
 
         while (App.run_status) {
-                if (!startTime) {
-                        startTime = SDL_GetTicks();
-                } else {
-                        delta = endTime - startTime;
-                }
-
                 SDL_Event event;
                 while (SDL_PollEvent(&event) != 0) {
                         switch (event.type) {
@@ -522,18 +510,6 @@ int main(int argc, char *args[])
 
                 /* update screen */
                 SDL_GL_SwapWindow(sdl_window);
-
-                /* fps print */
-                /* if (delta < timePerFrame) { */
-                /* SDL_Delay(timePerFrame - delta); */
-                /* } */
-                /* if delta is bigger than 16ms between frames, get the actual fps */
-                if (delta > timePerFrame) {
-                        fps = 1000 / delta;
-                }
-                startTime = endTime;
-                endTime = SDL_GetTicks();
-                SDL_Log("FPS: %i", fps);
         }
 
         /* shutdown */
