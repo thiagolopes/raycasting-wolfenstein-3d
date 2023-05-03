@@ -24,31 +24,30 @@
 #define INT(x) ((int)x)
 
 unsigned int TEXTURE[8];
-int map[24][24] = { { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7, 7, 7, 7, 7, 7, 7, 7 },
-                    { 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7 },
-                    { 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7 },
-                    { 4, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7 },
-                    { 4, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7 },
-                    { 4, 0, 4, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 0, 7, 7, 7, 7, 7 },
-                    { 4, 0, 5, 0, 0, 0, 0, 5, 0, 5, 0, 5, 0, 5, 0, 5, 7, 0, 0, 0, 7, 7, 7, 1 },
-                    { 4, 0, 6, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 8 },
-                    { 4, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 1 },
-                    { 4, 0, 8, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 8 },
-                    { 4, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 7, 7, 7, 1 },
-                    { 4, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 0, 5, 5, 5, 5, 7, 7, 7, 7, 7, 7, 7, 1 },
-                    { 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6 },
-                    { 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4 },
-                    { 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6 },
-                    { 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 6, 0, 6, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3 },
-                    { 4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2 },
-                    { 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 2, 0, 0, 5, 0, 0, 2, 0, 0, 0, 2 },
-                    { 4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2 },
-                    { 4, 0, 6, 0, 6, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 2 },
-                    { 4, 0, 0, 5, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2 },
-                    { 4, 0, 6, 0, 6, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 5, 0, 0, 2, 0, 0, 0, 2 },
-                    { 4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2 },
-                    { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3 } };
-
+int map[24][24] = { { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6, 4 },
+                    { 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4 },
+                    { 8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
+                    { 8, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
+                    { 8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4 },
+                    { 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 6, 6, 6, 0, 6, 4, 6 },
+                    { 8, 8, 8, 8, 0, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4, 6, 0, 0, 0, 0, 0, 6 },
+                    { 7, 7, 7, 7, 0, 7, 7, 7, 7, 0, 8, 0, 8, 0, 8, 0, 8, 4, 0, 4, 0, 6, 0, 6 },
+                    { 7, 7, 0, 0, 0, 0, 0, 0, 7, 8, 0, 8, 0, 8, 0, 8, 8, 6, 0, 0, 0, 0, 0, 6 },
+                    { 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 0, 0, 0, 0, 4 },
+                    { 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 6, 0, 6, 0, 6 },
+                    { 7, 7, 0, 0, 0, 0, 0, 0, 7, 8, 0, 8, 0, 8, 0, 8, 8, 6, 4, 6, 0, 6, 6, 6 },
+                    { 7, 7, 7, 7, 0, 7, 7, 7, 7, 8, 8, 4, 0, 6, 8, 4, 8, 3, 3, 3, 0, 3, 3, 3 },
+                    { 2, 2, 2, 2, 0, 2, 2, 2, 2, 4, 6, 4, 0, 0, 6, 0, 6, 3, 0, 0, 0, 0, 0, 3 },
+                    { 2, 2, 0, 0, 0, 0, 0, 2, 2, 4, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 3 },
+                    { 2, 0, 0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 3 },
+                    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 4, 4, 4, 4, 4, 6, 0, 6, 3, 3, 0, 0, 0, 3, 3 },
+                    { 2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 2, 2, 2, 6, 6, 0, 0, 5, 0, 5, 0, 5 },
+                    { 2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5 },
+                    { 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5 },
+                    { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5 },
+                    { 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5 },
+                    { 2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5 },
+                    { 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5 } };
 typedef struct {
         float x, y;
 } Pointf;
@@ -73,7 +72,7 @@ typedef struct {
 typedef struct {
         float x, y;
         double angle, direction_x, direction_y;
-        ;
+        int pitch_view;
         ButtonKeys Buttons;
 } Player;
 
@@ -161,6 +160,12 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
         case SDLK_LSHIFT:
                 App->Player.Buttons.shift = button_action;
                 break;
+        case SDLK_j:
+                App->Player.pitch_view -= 10;
+                break;
+        case SDLK_k:
+                App->Player.pitch_view += 10;
+                break;
         }
 
         SDL_Log("a=%i, d%i, w=%i, s=%i", App->Player.Buttons.a, App->Player.Buttons.d, App->Player.Buttons.w,
@@ -208,6 +213,8 @@ void SDLOpenGLSetup(AppGame App)
 
         if (App.window_fullcreen)
                 SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
+
+        SDL_ShowCursor(0);
 }
 
 void draw_dot(float x, float y)
@@ -320,6 +327,20 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame *App)
         }
 }
 
+void draw_center(AppGame *App)
+{
+        glColor3f(1, 1, 1);
+        glLineWidth(1);
+        glBegin(GL_LINES);
+        glVertex2i((App->screen_width / 2), (App->screen_heigh / 2) - (5));
+        glVertex2i((App->screen_width / 2), (App->screen_heigh / 2) + (5));
+
+        float off = (5 * 1.7) / 2;
+        glVertex2i((App->screen_width / 2) - off, (App->screen_heigh / 2));
+        glVertex2i((App->screen_width / 2) + off, (App->screen_heigh / 2));
+        glEnd();
+}
+
 void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
 {
         switch (button) {
@@ -362,6 +383,8 @@ void draw_3d_view_port(int fov, AppGame *App)
         double fov_in_rad = fov * ONE_RAD, hfov_in_rad = (fov / 2) * ONE_RAD;
         double pixel_in_rad = fov_in_rad / pixels_cols;
 
+        int pitch = App->Player.pitch_view; /* player look up or down */
+
         for (int i = 0; i < pixels_cols; i++) {
                 double angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
                 Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
@@ -378,7 +401,8 @@ void draw_3d_view_port(int fov, AppGame *App)
 
                         int draw_screen_h = App->screen_heigh;
                         int line_h = (App->map_height * draw_screen_h) / (d);
-                        int line_start = (draw_screen_h / 2) - (line_h / 2);
+                        int line_start = ((draw_screen_h / 2) - (line_h / 2)) - pitch;
+                        int line_end = line_start + line_h;
 
                         double wall_hit;
                         if (side == 1) {
@@ -396,8 +420,9 @@ void draw_3d_view_port(int fov, AppGame *App)
 
                         glTexCoord2f(wall_hit, 1.0);
                         glVertex2i(i, line_start);
+
                         glTexCoord2f(wall_hit, 0.0);
-                        glVertex2i(i, line_start + line_h);
+                        glVertex2i(i, line_end);
 
                         glEnd();
                         glDisable(GL_TEXTURE_2D);
@@ -408,17 +433,18 @@ void draw_3d_view_port(int fov, AppGame *App)
 void draw_3d_view_flor_and_ceil(AppGame *App)
 {
         int center_h = App->screen_heigh / 2;
+        int pitch = App->Player.pitch_view;
 
         glBegin(GL_QUADS);
         glColor3f(.0, .0, .0);
         glVertex2i(0, 0);
         glVertex2i(App->screen_width, 0);
-        glVertex2i(App->screen_width, center_h);
-        glVertex2i(0, center_h);
+        glVertex2i(App->screen_width, center_h + pitch);
+        glVertex2i(0, center_h + pitch);
 
         glColor3f(.4, .4, .4);
-        glVertex2i(0, center_h);
-        glVertex2i(App->screen_width, center_h);
+        glVertex2i(0, center_h - pitch);
+        glVertex2i(App->screen_width, center_h - pitch);
         glVertex2i(App->screen_width, App->screen_heigh);
         glVertex2i(0, App->screen_heigh);
         glEnd();
@@ -428,12 +454,13 @@ void draw(AppGame *App)
 {
         draw_3d_view_flor_and_ceil(App);
         draw_3d_view_port(FOV, App);
+        draw_center(App);
 }
 
 int main(int argc, char *args[])
 {
         srand(time(NULL));
-        AppGame App = { W, H, "Project raycasting", 1, 0, { 300, 300, cos(PI2), -sin(PI2), PI2 } };
+        AppGame App = { W, H, "Project raycasting", 1, 0, { 300, 300, cos(PI2), -sin(PI2), PI2, 0 } };
         App.map_cols = 24;
         App.map_rows = 24;
         App.map_height = 32;
