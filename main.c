@@ -177,9 +177,6 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
                 App->Player.Buttons.j = 0;
                 break;
         }
-
-        SDL_Log("a=%i, d%i, w=%i, s=%i", App->Player.Buttons.a, App->Player.Buttons.d, App->Player.Buttons.w,
-                App->Player.Buttons.s);
 }
 
 void engine_SDL_OpenGL_setup(AppGame *App)
@@ -224,7 +221,8 @@ void engine_SDL_OpenGL_setup(AppGame *App)
         if (App->window_fullcreen)
                 SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
 
-        SDL_ShowCursor(0);
+        SDL_ShowCursor(SDL_DISABLE);
+        SDL_CaptureMouse(SDL_TRUE);
 }
 
 void draw_dot(float x, float y)
@@ -515,7 +513,7 @@ void engine_SDL_OpenGL_load_textures(AppGame *App)
 int main(int argc, char *args[])
 {
         srand(time(NULL));
-        AppGame App = { W, H, "Project raycasting", 1, 0, { 300, 300, cos(PI2), -sin(PI2), PI2, 0 } };
+        AppGame App = { W, H, "Simple Wolfenstein Engine", 1, 0, { 300, 300, cos(PI2), -sin(PI2), PI2, 0 } };
         App.map_cols = 24;
         App.map_rows = 24;
         App.map_height = 32;
