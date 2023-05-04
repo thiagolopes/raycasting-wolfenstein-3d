@@ -181,7 +181,9 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
 
 void engine_SDL_OpenGL_setup(AppGame *App)
 {
-        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVERYTHING | SDL_INIT_NOPARACHUTE) < 0) {
+        int VSYNC = SDL_DISABLE;
+
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVERYTHING) < 0) {
                 perror(SDL_GetError());
         }
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -206,7 +208,7 @@ void engine_SDL_OpenGL_setup(AppGame *App)
         }
 
         /* setup vsync */
-        if (SDL_GL_SetSwapInterval(1) < 0) {
+        if (SDL_GL_SetSwapInterval(VSYNC) < 0) {
                 perror(SDL_GetError());
         }
 
@@ -223,15 +225,6 @@ void engine_SDL_OpenGL_setup(AppGame *App)
 
         SDL_ShowCursor(SDL_DISABLE);
         SDL_CaptureMouse(SDL_TRUE);
-}
-
-void draw_dot(float x, float y)
-{
-        glColor3f(1, 1, 1);
-        glPointSize(1);
-        glBegin(GL_POINTS);
-        glVertex2i(x, y);
-        glEnd();
 }
 
 int check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y)
@@ -325,14 +318,13 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame *App)
 {
         switch (button) {
         case SDL_BUTTON_LEFT:
-                App->map_tile[INT(truncf(y)) / App->map_height][INT(truncf(x)) / App->map_height] = 1;
                 break;
         case SDL_BUTTON_RIGHT:
                 break;
         }
 }
 
-void draw_center(AppGame *App)
+void draw_aim(AppGame *App)
 {
         float pixel[3];
 
@@ -480,7 +472,7 @@ void draw(AppGame *App)
 {
         draw_3d_view_flor_and_ceil(App);
         draw_3d_view_port(FOV, App);
-        draw_center(App);
+        draw_aim(App);
 }
 
 void handle_mouse_motion(AppGame *App, SDL_Event *event)
