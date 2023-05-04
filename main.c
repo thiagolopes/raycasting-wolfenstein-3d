@@ -341,16 +341,69 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame *App)
 
 void draw_center(AppGame *App)
 {
-        glColor3f(1, 1, 1);
-        glLineWidth(1);
-        glBegin(GL_LINES);
-        glVertex2i((App->screen_width / 2), (App->screen_heigh / 2) - (5));
-        glVertex2i((App->screen_width / 2), (App->screen_heigh / 2) + (5));
+        float pixel[3];
 
-        float off = (5 * 1.7) / 2;
-        glVertex2i((App->screen_width / 2) - off, (App->screen_heigh / 2));
-        glVertex2i((App->screen_width / 2) + off, (App->screen_heigh / 2));
+        glLogicOp(GL_COPY_INVERTED);
+        glEnable(GL_COLOR_LOGIC_OP);
+        glBegin(GL_POINTS);
+        for (int i = 0; i < 20; i++) {
+                int x = App->screen_width / 2;
+                int y = (App->screen_heigh / 2) - 10;
+
+                glReadPixels(x, y + i, 1, 1, GL_RGB, GL_FLOAT, &pixel);
+                glColor3f(pixel[0], pixel[1], pixel[2]);
+                glVertex2i(x, y + i);
+        }
         glEnd();
+        glLogicOp(GL_COPY);
+        glDisable(GL_COLOR_LOGIC_OP);
+
+        glLogicOp(GL_COPY_INVERTED);
+        glEnable(GL_COLOR_LOGIC_OP);
+        glBegin(GL_POINTS);
+
+        for (int i = 0; i < 20; i++) {
+                int x = (App->screen_width / 2) - 10;
+                int y = (App->screen_heigh / 2);
+
+                glReadPixels(x + i, y, 1, 1, GL_RGB, GL_FLOAT, &pixel);
+                glColor3f(pixel[0], pixel[1], pixel[2]);
+                glVertex2i(x + i, y);
+        }
+        glEnd();
+        glLogicOp(GL_COPY);
+        glDisable(GL_COLOR_LOGIC_OP);
+        /* float pixels[4]; */
+        /* glReadPixels((App->screen_width / 2), (App->screen_heigh / 2), 1, 1, GL_RGBA, GL_FLOAT, pixels); */
+        /* SDL_Log("%f %f %f", pixels[0], pixels[1], pixels[2]); */
+
+        /* /\* glColor3f(1.0f, 1.0f, 1.0f); *\/ */
+        /* glLogicOp (GL_COPY_INVERTED); */
+        /* glEnable(GL_COLOR_LOGIC_OP); */
+
+        /* glBegin(GL_LINES); */
+        /* glVertex2i(App->screen_width / 2 - 10, App->screen_heigh / 2); */
+        /* glVertex2i(App->screen_width / 2 + 10, App->screen_heigh / 2); */
+        /* glEnd(); */
+
+        /* glBegin(GL_LINES); */
+        /* glVertex2i(App->screen_width / 2, App->screen_heigh / 2 - 10); */
+        /* glVertex2i(App->screen_width / 2, App->screen_heigh / 2 + 10); */
+        /* glEnd(); */
+
+        /* glLogicOp (GL_COPY); */
+        /* glDisable(GL_COLOR_LOGIC_OP); */
+
+        /* glColor3f(1, 1, 1); */
+        /* glLineWidth(1); */
+        /* glBegin(GL_LINES); */
+        /* glVertex2i((App->screen_width / 2), (App->screen_heigh / 2) - (5)); */
+        /* glVertex2i((App->screen_width / 2), (App->screen_heigh / 2) + (5)); */
+
+        /* float off = (5 * 1.7) / 2; */
+        /* glVertex2i((App->screen_width / 2) - off, (App->screen_heigh / 2)); */
+        /* glVertex2i((App->screen_width / 2) + off, (App->screen_heigh / 2)); */
+        /* glEnd(); */
 }
 
 void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
