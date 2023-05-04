@@ -23,7 +23,9 @@
 
 #define INT(x) ((int)x)
 
+int TEXTURE_LEN = 8;
 unsigned int TEXTURE[8];
+
 int map[24][24] = { { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6, 4 },
                     { 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4 },
                     { 8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
@@ -55,10 +57,6 @@ typedef struct {
 typedef struct {
         int x, y;
 } Point;
-
-Pointf MOUSE_POINT;
-int MOUSE_POINT_SHOW;
-Pointf INTERSECTION_POINT;
 
 typedef struct {
         Point p1, p2;
@@ -184,7 +182,7 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
                 App->Player.Buttons.s);
 }
 
-void SDLOpenGLSetup(AppGame App)
+void engine_SDL_OpenGL_setup(AppGame *App)
 {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVERYTHING | SDL_INIT_NOPARACHUTE) < 0) {
                 perror(SDL_GetError());
@@ -199,8 +197,8 @@ void SDLOpenGLSetup(AppGame App)
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-        sdl_window = SDL_CreateWindow(App.window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                      App.screen_width, App.screen_heigh, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+        sdl_window = SDL_CreateWindow(App->window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                      App->screen_width, App->screen_heigh, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
         if (sdl_window == NULL) {
                 perror(SDL_GetError());
         }
@@ -218,12 +216,12 @@ void SDLOpenGLSetup(AppGame App)
         /* init opengl view */
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        glOrtho(0, App.screen_width, App.screen_heigh, 0, 1, -1);
+        glOrtho(0, App->screen_width, App->screen_heigh, 0, 1, -1);
         glMatrixMode(GL_MODELVIEW);
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        if (App.window_fullcreen)
+        if (App->window_fullcreen)
                 SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
 
         SDL_ShowCursor(0);
@@ -317,7 +315,7 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direc
         }
 }
 
-void SDLOpenGLShutdown()
+void engine_SDL_OpenGL_shutdown()
 {
         SDL_VideoQuit();
         SDL_GL_DeleteContext(sdl_gl_context);
@@ -332,9 +330,6 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame *App)
                 App->map_tile[INT(truncf(y)) / App->map_height][INT(truncf(x)) / App->map_height] = 1;
                 break;
         case SDL_BUTTON_RIGHT:
-                MOUSE_POINT_SHOW = 1;
-                MOUSE_POINT.x = x;
-                MOUSE_POINT.y = y;
                 break;
         }
 }
@@ -373,37 +368,6 @@ void draw_center(AppGame *App)
         glEnd();
         glLogicOp(GL_COPY);
         glDisable(GL_COLOR_LOGIC_OP);
-        /* float pixels[4]; */
-        /* glReadPixels((App->screen_width / 2), (App->screen_heigh / 2), 1, 1, GL_RGBA, GL_FLOAT, pixels); */
-        /* SDL_Log("%f %f %f", pixels[0], pixels[1], pixels[2]); */
-
-        /* /\* glColor3f(1.0f, 1.0f, 1.0f); *\/ */
-        /* glLogicOp (GL_COPY_INVERTED); */
-        /* glEnable(GL_COLOR_LOGIC_OP); */
-
-        /* glBegin(GL_LINES); */
-        /* glVertex2i(App->screen_width / 2 - 10, App->screen_heigh / 2); */
-        /* glVertex2i(App->screen_width / 2 + 10, App->screen_heigh / 2); */
-        /* glEnd(); */
-
-        /* glBegin(GL_LINES); */
-        /* glVertex2i(App->screen_width / 2, App->screen_heigh / 2 - 10); */
-        /* glVertex2i(App->screen_width / 2, App->screen_heigh / 2 + 10); */
-        /* glEnd(); */
-
-        /* glLogicOp (GL_COPY); */
-        /* glDisable(GL_COLOR_LOGIC_OP); */
-
-        /* glColor3f(1, 1, 1); */
-        /* glLineWidth(1); */
-        /* glBegin(GL_LINES); */
-        /* glVertex2i((App->screen_width / 2), (App->screen_heigh / 2) - (5)); */
-        /* glVertex2i((App->screen_width / 2), (App->screen_heigh / 2) + (5)); */
-
-        /* float off = (5 * 1.7) / 2; */
-        /* glVertex2i((App->screen_width / 2) - off, (App->screen_heigh / 2)); */
-        /* glVertex2i((App->screen_width / 2) + off, (App->screen_heigh / 2)); */
-        /* glEnd(); */
 }
 
 void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
@@ -412,12 +376,11 @@ void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
         case SDL_BUTTON_LEFT:
                 break;
         case SDL_BUTTON_RIGHT:
-                MOUSE_POINT_SHOW = 0;
                 break;
         }
 }
 
-void load_textures(AppGame *App, unsigned int *texture, char *texture_name)
+void load_textures(unsigned int *texture, char *texture_name)
 {
         stbi_set_flip_vertically_on_load(1);
 
@@ -522,6 +485,33 @@ void draw(AppGame *App)
         draw_center(App);
 }
 
+void handle_mouse_motion(AppGame *App, SDL_Event *event)
+{
+        if (event->motion.state == (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK)) {
+                handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y, App);
+                handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y, App);
+        } else if (event->motion.state == SDL_BUTTON_LMASK) {
+                handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y, App);
+        } else if (event->motion.state == SDL_BUTTON_RMASK) {
+                handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y, App);
+        }
+}
+
+void engine_SDL_OpenGL_load_textures(AppGame *App)
+{
+        glGenTextures(TEXTURE_LEN, TEXTURE);
+
+        load_textures(&TEXTURE[0], "./textures/eagle.png");
+        load_textures(&TEXTURE[1], "./textures/redbrick.png");
+        load_textures(&TEXTURE[2], "./textures/purplestone.png");
+        load_textures(&TEXTURE[3], "./textures/greystone.png");
+        load_textures(&TEXTURE[4], "./textures/bluestone.png");
+        load_textures(&TEXTURE[5], "./textures/mossy.png");
+        load_textures(&TEXTURE[6], "./textures/wood.png");
+        load_textures(&TEXTURE[7], "./textures/colorstone.png");
+        App->texture = TEXTURE;
+}
+
 int main(int argc, char *args[])
 {
         srand(time(NULL));
@@ -533,19 +523,8 @@ int main(int argc, char *args[])
                 for (int y = 0; y < App.map_rows; y++)
                         App.map_tile[x][y] = map[x][y];
 
-        SDLOpenGLSetup(App);
-
-        glGenTextures(8, TEXTURE);
-
-        load_textures(&App, &TEXTURE[0], "./textures/eagle.png");
-        load_textures(&App, &TEXTURE[1], "./textures/redbrick.png");
-        load_textures(&App, &TEXTURE[2], "./textures/purplestone.png");
-        load_textures(&App, &TEXTURE[3], "./textures/greystone.png");
-        load_textures(&App, &TEXTURE[4], "./textures/bluestone.png");
-        load_textures(&App, &TEXTURE[5], "./textures/mossy.png");
-        load_textures(&App, &TEXTURE[6], "./textures/wood.png");
-        load_textures(&App, &TEXTURE[7], "./textures/colorstone.png");
-        App.texture = TEXTURE;
+        engine_SDL_OpenGL_setup(&App);
+        engine_SDL_OpenGL_load_textures(&App);
 
         while (App.run_status) {
                 SDL_Event event;
@@ -561,18 +540,7 @@ int main(int argc, char *args[])
                                 handle_key(event.key.keysym, &App, 0);
                                 break;
                         case SDL_MOUSEMOTION:
-                                if (event.motion.state == (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK)) {
-                                        handle_mouse_pressed_down(SDL_BUTTON_LEFT, event.button.x, event.button.y,
-                                                                  &App);
-                                        handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event.button.x, event.button.y,
-                                                                  &App);
-                                } else if (event.motion.state == SDL_BUTTON_LMASK) {
-                                        handle_mouse_pressed_down(SDL_BUTTON_LEFT, event.button.x, event.button.y,
-                                                                  &App);
-                                } else if (event.motion.state == SDL_BUTTON_RMASK) {
-                                        handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event.button.x, event.button.y,
-                                                                  &App);
-                                }
+                                handle_mouse_motion(&App, &event);
                                 break;
                         case SDL_MOUSEBUTTONDOWN:
                                 handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
@@ -598,6 +566,6 @@ int main(int argc, char *args[])
         }
 
         /* shutdown */
-        SDLOpenGLShutdown();
+        engine_SDL_OpenGL_shutdown();
         return 0;
 }
