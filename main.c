@@ -436,10 +436,10 @@ void draw_3d_view_port(int fov, AppGame *App)
                         glBindTexture(GL_TEXTURE_2D, App->texture[map_value - 1]);
                         glBegin(GL_LINES);
 
-                        glTexCoord2f(wall_hit, 1.0);
+                        glTexCoord2d(wall_hit, 1.0);
                         glVertex2i(i, line_start);
 
-                        glTexCoord2f(wall_hit, 0.0);
+                        glTexCoord2d(wall_hit, 0.0);
                         glVertex2i(i, line_end);
 
                         glEnd();
@@ -505,7 +505,7 @@ void engine_SDL_OpenGL_load_textures(AppGame *App)
 int main(int argc, char *args[])
 {
         srand(time(NULL));
-        AppGame App = { W, H, "Simple Wolfenstein Engine", 1, 0, { 300, 300, cos(PI2), -sin(PI2), PI2, 0 } };
+        AppGame App = { W, H, "Simple Wolfenstein Engine", 1, 0, { 300, 300, 0, cos(PI2), -sin(PI2), PI2, 0 } };
         App.map_cols = 24;
         App.map_rows = 24;
         App.map_height = 32;
