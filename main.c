@@ -66,8 +66,12 @@ typedef struct {
 } Vector;
 
 typedef struct {
-        int a, w, s, d, shift;
+        int a, w, s, d, shift, ctrl, j, k;
 } ButtonKeys;
+
+typedef struct {
+        float x, y, xref, yref, button_r, button_l;
+} Mouse;
 
 typedef struct {
         float x, y;
@@ -130,6 +134,12 @@ void update_player(AppGame *App)
                 App->Player.x -= App->Player.direction_x * magntude;
                 App->Player.y -= App->Player.direction_y * magntude;
         }
+        if (App->Player.Buttons.j == 1) {
+                App->Player.pitch_view -= 10;
+        }
+        if (App->Player.Buttons.k == 1) {
+                App->Player.pitch_view += 10;
+        }
 
         App->Player.angle = normalize_rand(App->Player.angle);
 }
@@ -161,10 +171,12 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
                 App->Player.Buttons.shift = button_action;
                 break;
         case SDLK_j:
-                App->Player.pitch_view -= 10;
+                App->Player.Buttons.j = button_action;
+                App->Player.Buttons.k = 0;
                 break;
         case SDLK_k:
-                App->Player.pitch_view += 10;
+                App->Player.Buttons.k = button_action;
+                App->Player.Buttons.j = 0;
                 break;
         }
 
