@@ -8,12 +8,13 @@
 #include <SDL2/SDL_opengl.h>
 #include <math.h>
 #include <time.h>
+#include <stdbool.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define PI 3.14
-#define PI2 (PI * 2)
+#define PI 3.141592
+#define PI2 6.283185
 #define ONE_RAD PI / 180
 
 #define FOV 70
@@ -227,18 +228,18 @@ void engine_SDL_OpenGL_setup(AppGame *App)
         SDL_CaptureMouse(SDL_TRUE);
 }
 
-int check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y)
+bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y)
 {
         if (index_x >= 0 && index_x < index_max_x && index_y >= 0 && index_y < index_max_y)
-                return 1;
+                return true;
         else
-                return 0;
+                return false;
 }
 
 void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direction, int *side, int *map_value,
                   float *dist)
 {
-        int bound = 0;
+        bool bound = false;
         float ray_dist = 0;
         float ray_dist_max_walk = 1000.0;
 
@@ -292,12 +293,12 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direc
                 if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, App->map_cols, App->map_rows) ==
                             1 &&
                     App->map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
-                        bound = 1;
+                        bound = true;
                         *map_value = App->map_tile[absolute_map_tile.y][absolute_map_tile.x];
                 }
         }
 
-        if (bound == 1) {
+        if (bound == true) {
                 /* point_collision_map->x = tile_map_check.x; */
                 /* point_collision_map->y = tile_map_check.y; */
 
@@ -505,7 +506,7 @@ void engine_SDL_OpenGL_load_textures(AppGame *App)
 int main(int argc, char *args[])
 {
         srand(time(NULL));
-        AppGame App = { W, H, "Simple Wolfenstein Engine", 1, 0, { 300, 300, 0, cos(PI2), -sin(PI2), PI2, 0 } };
+        AppGame App = { W, H, "Simple Wolfenstein Engine", 1, 0, { 300, 300, 0, cos(PI2), -sin(PI2), 0 } };
         App.map_cols = 24;
         App.map_rows = 24;
         App.map_height = 32;
