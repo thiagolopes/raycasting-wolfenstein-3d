@@ -115,15 +115,12 @@ void update_player(AppGame *App)
         if (App->Player.Buttons.shift == 1)
                 magntude = 2;
 
+        /* FIX TO USE THE RELATIVE X/Y REF BASED ON THE PLAYER VIEW */
         if (App->Player.Buttons.d == 1) {
-                App->Player.angle += ONE_RAD;
-                App->Player.direction_x = cos(App->Player.angle);
-                App->Player.direction_y = -sin(App->Player.angle);
+                App->Player.y -= App->Player.direction_x * magntude;
         }
         if (App->Player.Buttons.a == 1) {
-                App->Player.angle -= ONE_RAD;
-                App->Player.direction_x = cos(App->Player.angle);
-                App->Player.direction_y = -sin(App->Player.angle);
+                App->Player.y += App->Player.direction_x * magntude;
         }
         if (App->Player.Buttons.w == 1) {
                 App->Player.x += App->Player.direction_x * magntude;
@@ -226,6 +223,7 @@ void engine_SDL_OpenGL_setup(AppGame *App)
 
         SDL_ShowCursor(SDL_DISABLE);
         SDL_CaptureMouse(SDL_TRUE);
+        SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y)
@@ -485,6 +483,17 @@ void handle_mouse_motion(AppGame *App, SDL_Event *event)
                 handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y, App);
         } else if (event->motion.state == SDL_BUTTON_RMASK) {
                 handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y, App);
+        }
+
+        switch (event->type) {
+        case SDL_MOUSEMOTION:
+                App->Player.pitch_view += (event->motion.yrel * 3);
+
+                App->Player.angle += (ONE_RAD / 6) * event->motion.xrel;
+                App->Player.direction_x = cos(App->Player.angle);
+                App->Player.direction_y = -sin(App->Player.angle);
+
+                break;
         }
 }
 
