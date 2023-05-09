@@ -18,7 +18,7 @@
 #define ONE_RAD PI / 180
 
 #define FOV 70
-#define hFOV FOV / 2
+#define hFOV 70 / 2
 #define W 1920
 #define H 1080
 
@@ -51,18 +51,16 @@ int map[24][24] = { { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4
                     { 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5 },
                     { 2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5 },
                     { 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5 } };
+
+/* TODO USE GLM */
 typedef struct {
         float x, y;
 } Pointf;
 
+/* TODO USE GLM */
 typedef struct {
         int x, y;
 } Point;
-
-typedef struct {
-        Point p1, p2;
-        float length;
-} Vector;
 
 typedef struct {
         int a, w, s, d, shift, ctrl, j, k;
@@ -136,7 +134,6 @@ void update_player(AppGame *App)
         if (App->Player.Buttons.k == 1) {
                 App->Player.pitch_view += 10;
         }
-
         App->Player.angle = normalize_rand(App->Player.angle);
 }
 
@@ -173,6 +170,9 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
         case SDLK_k:
                 App->Player.Buttons.k = button_action;
                 App->Player.Buttons.j = 0;
+                break;
+        case SDLK_LCTRL:
+                App->Player.Buttons.ctrl = button_action;
                 break;
         }
 }
