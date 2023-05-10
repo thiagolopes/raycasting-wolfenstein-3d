@@ -5,3 +5,10 @@
 
 ## v0.2 textured
 ![v2](https://user-images.githubusercontent.com/5994972/235757981-641a1d44-f550-4e46-8ef5-71f14a095a12.gif)
+
+
+### How build
+```
+cmake .
+make
+```
