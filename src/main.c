@@ -24,6 +24,8 @@
 
 #define INT(x) ((int)x)
 
+#include "engine_draw.c"
+
 int TEXTURE_LEN = 8;
 unsigned int TEXTURE[8];
 
@@ -395,24 +397,6 @@ void load_textures(unsigned int *texture, char *texture_name)
         stbi_image_free(data);
 }
 
-static void draw_vertical_view(AppGame *App, int texture, double texture_of, int pixel_start, int pixel_end,
-                               int vertical_pixel)
-{
-        glColor3f(1, 1, 1);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, App->texture[texture]);
-        glBegin(GL_LINES);
-
-        glTexCoord2d(texture_of, 1.0);
-        glVertex2i(vertical_pixel, pixel_start);
-
-        glTexCoord2d(texture_of, 0.0);
-        glVertex2i(vertical_pixel, pixel_end);
-
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
-}
-
 /* move from float to double */
 void draw_3d_view_port(int fov, AppGame *App)
 {
@@ -448,7 +432,7 @@ void draw_3d_view_port(int fov, AppGame *App)
                                 wall_hit = (double)((int)collision_wall.y % (wall_high / 2)) / (wall_high / 2);
                         }
 
-                        draw_vertical_view(App, map_index_value - 1, wall_hit, line_start, line_end, i);
+                        draw_vertical_view(App->texture[map_index_value - 1], wall_hit, line_start, line_end, i);
                 }
         }
 }
