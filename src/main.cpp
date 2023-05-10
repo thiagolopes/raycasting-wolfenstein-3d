@@ -1,4 +1,5 @@
 #include <GL/gl.h>
+#include <glm/glm.hpp>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
@@ -8,10 +9,13 @@
 #include <SDL2/SDL_opengl.h>
 #include <math.h>
 #include <time.h>
-#include <stdbool.h>
+#include <string>
+#include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "misc/stb_image.h"
+#include "stb_image.h"
+
+using namespace std;
 
 #define PI 3.141592
 #define PI2 6.283185
@@ -77,15 +81,15 @@ typedef struct {
         double angle, direction_x, direction_y;
         int pitch_view;
         ButtonKeys Buttons;
-} Player;
+} PLAYER;
 
 typedef struct {
         int screen_width;
         int screen_heigh;
-        char *window_name;
+        string window_name;
         int run_status;
         int window_fullcreen;
-        Player Player;
+        PLAYER Player;
 
         /* move to map */
         int map_cols;
@@ -196,7 +200,7 @@ void engine_SDL_OpenGL_setup(AppGame *App)
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-        sdl_window = SDL_CreateWindow(App->window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        sdl_window = SDL_CreateWindow(App->window_name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                       App->screen_width, App->screen_heigh, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
         if (sdl_window == NULL) {
                 perror(SDL_GetError());
@@ -372,12 +376,12 @@ void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
         }
 }
 
-void load_textures(unsigned int *texture, char *texture_name)
+void load_textures(unsigned int *texture, string texture_name)
 {
         stbi_set_flip_vertically_on_load(1);
 
         int f_width, f_height, bpp;
-        unsigned char *data = stbi_load(texture_name, &f_width, &f_height, &bpp, 0);
+        unsigned char *data = stbi_load(texture_name.c_str(), &f_width, &f_height, &bpp, 0);
         if (!data) {
                 SDL_Log("load data error");
         }
@@ -408,7 +412,7 @@ void draw_3d_view_port(int fov, AppGame *App)
 
         for (int i = 0; i < pixels_cols; i++) {
                 double angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
-                Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
+                Pointf point_end = { float(App->Player.x + cos(angle)), float(App->Player.y + -sin(angle)) };
                 Pointf collision_wall = { 0, 0 };
                 int side, map_index_value;
                 float d2;
@@ -427,9 +431,9 @@ void draw_3d_view_port(int fov, AppGame *App)
                         double wall_hit;
                         if (side == 1) {
                                 /* for some reason wall_high is divived by 2 */
-                                wall_hit = (double)((int)collision_wall.x % (wall_high / 2)) / (wall_high / 2);
+                          wall_hit = double(int(collision_wall.x) % (wall_high / 2)) / (wall_high / 2);
                         } else {
-                                wall_hit = (double)((int)collision_wall.y % (wall_high / 2)) / (wall_high / 2);
+                          wall_hit = double(int(collision_wall.y) % (wall_high / 2)) / (wall_high / 2);
                         }
 
                         draw_vertical_view(App->texture[map_index_value - 1], wall_hit, line_start, line_end, i);
