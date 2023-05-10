@@ -240,27 +240,28 @@ bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_
                 return false;
 }
 
+typedef struct {
+        glm::ivec2 start_point;
+        glm::fvec2 uvec_direction_view;
+        enum { RIGTH, LEFT } side;
+        glm::ivec2 map_index;
+} DDA;
+
 void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direction, int *side, int *map_index_value,
-                  float *dist)
+                  float *dist, float ray_total_max = 1000.0)
 {
-        /* to enable "FOG" */
-        float ray_dist = 0.0, ray_dist_max_walk = 1000.0;
-        /* walk flag */
-        bool bound = false;
+        float ray_total = 0.0;
+        bool ray_bound = false;
 
-        Pointf point_start = { App->Player.x, App->Player.y },
-               delta = { point_direction->x / App->map_height - point_start.x / App->map_height,
-                         point_direction->y / App->map_height - point_start.y / App->map_height };
-
-        float point_magnitude = sqrtf(powf(delta.x, 2) + powf(delta.y, 2));
-
-        Pointf unitary_vector = { delta.x / point_magnitude, delta.y / point_magnitude },
-               unitary_step_size = { sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
-                                     sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)) },
-               ray_length_1D, step;
-
-        Pointf tile_map_check = { truncf(point_start.x), truncf(point_start.y) };
-        Point absolute_map_tile;
+        glm::fvec2 point_start = glm::fvec2(App->Player.x, App->Player.y);
+        glm::fvec2 delta = glm::fvec2(point_direction->x / App->map_height - point_start.x / App->map_height,
+                                      point_direction->y / App->map_height - point_start.y / App->map_height);
+        glm::fvec2 unitary_vector = glm::fvec2(delta.x / glm::length(delta), delta.y / glm::length(delta));
+        glm::fvec2 unitary_step_size = glm::fvec2(sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
+                                                  sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)));
+        glm::fvec2 ray_length_1D, step;
+        glm::ivec2 tile_map_check = glm::ivec2(point_start.x, point_start.y);
+        glm::ivec2 absolute_map_tile;
 
         /* set x walk */
         if (unitary_vector.x < 0) {
@@ -280,16 +281,16 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direc
                 ray_length_1D.y = ((tile_map_check.y + 1) - point_start.y) * unitary_step_size.y;
         }
 
-        while (!bound && ray_dist < ray_dist_max_walk) {
+        while (!ray_bound && ray_total < ray_total_max) {
                 /* walk */
                 if (ray_length_1D.x < ray_length_1D.y) {
                         tile_map_check.x += step.x;
-                        ray_dist = ray_length_1D.x;
+                        ray_total = ray_length_1D.x;
                         ray_length_1D.x += unitary_step_size.x;
                         *side = 0; /* vertical */
                 } else {
                         tile_map_check.y += step.y;
-                        ray_dist = ray_length_1D.y;
+                        ray_total = ray_length_1D.y;
                         ray_length_1D.y += unitary_step_size.y;
                         *side = 1; /* horizontal */
                 }
@@ -300,14 +301,14 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direc
                 if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, App->map_cols, App->map_rows) ==
                             1 &&
                     App->map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
-                        bound = true;
+                        ray_bound = true;
                         *map_index_value = App->map_tile[absolute_map_tile.y][absolute_map_tile.x];
                 }
         }
 
-        if (bound == true) {
-                point_collision_map->x = point_start.x + unitary_vector.x * ray_dist;
-                point_collision_map->y = point_start.y + unitary_vector.y * ray_dist;
+        if (ray_bound == true) {
+                point_collision_map->x = point_start.x + unitary_vector.x * ray_total;
+                point_collision_map->y = point_start.y + unitary_vector.y * ray_total;
         }
 }
 
@@ -431,9 +432,9 @@ void draw_3d_view_port(int fov, AppGame *App)
                         double wall_hit;
                         if (side == 1) {
                                 /* for some reason wall_high is divived by 2 */
-                          wall_hit = double(int(collision_wall.x) % (wall_high / 2)) / (wall_high / 2);
+                                wall_hit = double(int(collision_wall.x) % (wall_high / 2)) / (wall_high / 2);
                         } else {
-                          wall_hit = double(int(collision_wall.y) % (wall_high / 2)) / (wall_high / 2);
+                                wall_hit = double(int(collision_wall.y) % (wall_high / 2)) / (wall_high / 2);
                         }
 
                         draw_vertical_view(App->texture[map_index_value - 1], wall_hit, line_start, line_end, i);
