@@ -429,12 +429,9 @@ void draw_imgui(AppGame *App)
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
+
         ImGui::NewFrame();
-        bool show_demo_window = true;
-        bool show_another_window = true;
-        ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        ImGui::ShowDemoWindow(&show_demo_window);
+        ImGui::ShowDemoWindow();
         ImGui::Render();
 }
 
