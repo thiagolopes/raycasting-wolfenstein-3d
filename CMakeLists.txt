@@ -64,7 +64,7 @@ target_compile_options(${BUILD_NAME} PRIVATE
 
 # Link Libraries
 target_link_libraries(${BUILD_NAME} Threads::Threads)
-target_link_libraries(${BUILD_NAME} OpenGL::GL SDL2::SDL2 GLEW::GLEW m SDL2_image)
+target_link_libraries(${BUILD_NAME} OpenGL::GL SDL2::SDL2 GLEW::GLEW m)
 
 
 
