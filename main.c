@@ -234,12 +234,13 @@ bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_
                 return false;
 }
 
-void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direction, int *side, int *map_value,
+void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direction, int *side, int *map_index_value,
                   float *dist)
 {
+        /* to enable "FOG" */
+        float ray_dist = 0.0, ray_dist_max_walk = 1000.0;
+        /* walk flag */
         bool bound = false;
-        float ray_dist = 0;
-        float ray_dist_max_walk = 1000.0;
 
         Pointf point_start = { App->Player.x, App->Player.y },
                delta = { point_direction->x / App->map_height - point_start.x / App->map_height,
@@ -253,6 +254,7 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direc
                ray_length_1D, step;
 
         Pointf tile_map_check = { truncf(point_start.x), truncf(point_start.y) };
+        Point absolute_map_tile;
 
         /* set x walk */
         if (unitary_vector.x < 0) {
@@ -278,7 +280,7 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direc
                         tile_map_check.x += step.x;
                         ray_dist = ray_length_1D.x;
                         ray_length_1D.x += unitary_step_size.x;
-                        *side = 0; /* vertical todo verify */
+                        *side = 0; /* vertical */
                 } else {
                         tile_map_check.y += step.y;
                         ray_dist = ray_length_1D.y;
@@ -287,19 +289,17 @@ void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direc
                 }
 
                 /* check */
-                Point absolute_map_tile = { tile_map_check.x / App->map_height, tile_map_check.y / App->map_height };
+                absolute_map_tile.x = tile_map_check.x / App->map_height;
+                absolute_map_tile.y = tile_map_check.y / App->map_height;
                 if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, App->map_cols, App->map_rows) ==
                             1 &&
                     App->map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
                         bound = true;
-                        *map_value = App->map_tile[absolute_map_tile.y][absolute_map_tile.x];
+                        *map_index_value = App->map_tile[absolute_map_tile.y][absolute_map_tile.x];
                 }
         }
 
         if (bound == true) {
-                /* point_collision_map->x = tile_map_check.x; */
-                /* point_collision_map->y = tile_map_check.y; */
-
                 point_collision_map->x = point_start.x + unitary_vector.x * ray_dist;
                 point_collision_map->y = point_start.y + unitary_vector.y * ray_dist;
         }
@@ -323,6 +323,7 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame *App)
         }
 }
 
+/* TODO move to shader */
 void draw_aim(AppGame *App)
 {
         float pixel[3];
@@ -378,7 +379,8 @@ void load_textures(unsigned int *texture, char *texture_name)
         if (!data) {
                 SDL_Log("load data error");
         }
-        /* init texture from file */
+
+        /* init texture from file pixels to GPU MEMORY*/
         glBindTexture(GL_TEXTURE_2D, *texture);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
@@ -391,6 +393,24 @@ void load_textures(unsigned int *texture, char *texture_name)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, f_width, f_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
         stbi_image_free(data);
+}
+
+static void draw_vertical_view(AppGame *App, int texture, double texture_of, int pixel_start, int pixel_end,
+                               int vertical_pixel)
+{
+        glColor3f(1, 1, 1);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, App->texture[texture]);
+        glBegin(GL_LINES);
+
+        glTexCoord2d(texture_of, 1.0);
+        glVertex2i(vertical_pixel, pixel_start);
+
+        glTexCoord2d(texture_of, 0.0);
+        glVertex2i(vertical_pixel, pixel_end);
+
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
 }
 
 /* move from float to double */
@@ -406,11 +426,10 @@ void draw_3d_view_port(int fov, AppGame *App)
                 double angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
                 Pointf point_end = { App->Player.x + cos(angle), App->Player.y + -sin(angle) };
                 Pointf collision_wall = { 0, 0 };
-                int side;
-                int map_value;
+                int side, map_index_value;
                 float d2;
 
-                DDA_Algorith(App, &collision_wall, &point_end, &side, &map_value, &d2);
+                DDA_Algorith(App, &collision_wall, &point_end, &side, &map_index_value, &d2);
 
                 if (collision_wall.x != 0 && collision_wall.y != 0) {
                         double d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
@@ -429,20 +448,7 @@ void draw_3d_view_port(int fov, AppGame *App)
                                 wall_hit = (double)((int)collision_wall.y % (wall_high / 2)) / (wall_high / 2);
                         }
 
-                        /* 3drender here, TODO move  */
-                        glColor3f(1, 1, 1);
-                        glEnable(GL_TEXTURE_2D);
-                        glBindTexture(GL_TEXTURE_2D, App->texture[map_value - 1]);
-                        glBegin(GL_LINES);
-
-                        glTexCoord2d(wall_hit, 1.0);
-                        glVertex2i(i, line_start);
-
-                        glTexCoord2d(wall_hit, 0.0);
-                        glVertex2i(i, line_end);
-
-                        glEnd();
-                        glDisable(GL_TEXTURE_2D);
+                        draw_vertical_view(App, map_index_value - 1, wall_hit, line_start, line_end, i);
                 }
         }
 }
