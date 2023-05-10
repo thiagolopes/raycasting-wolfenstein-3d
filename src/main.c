@@ -11,7 +11,7 @@
 #include <stdbool.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "misc/stb_image.h"
 
 #define PI 3.141592
 #define PI2 6.283185
@@ -24,7 +24,7 @@
 
 #define INT(x) ((int)x)
 
-#include "engine_draw.c"
+#include "engine.c"
 
 int TEXTURE_LEN = 8;
 unsigned int TEXTURE[8];
