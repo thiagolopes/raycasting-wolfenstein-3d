@@ -18,5 +18,5 @@ target_link_libraries(game OpenGL::GL SDL2::SDL2 GLEW::GLEW m SDL2_image)
 
 #lint
 add_custom_target(lint
-    COMMAND clang-format --style=file src/*.c -i
+    COMMAND clang-format --style=file src/*.c src/*.cpp -i
 )
