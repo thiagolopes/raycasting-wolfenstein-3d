@@ -17,18 +17,7 @@
 
 using namespace std;
 
-#define PI 3.141592
-#define PI2 6.283185
-#define ONE_RAD PI / 180
-
-#define FOV 70
-#define hFOV 70 / 2
-#define W 1920
-#define H 1080
-
-#define INT(x) ((int)x)
-
-#include "engine.c"
+#include "engine.hpp"
 
 int TEXTURE_LEN = 8;
 unsigned int TEXTURE[8];
@@ -57,39 +46,6 @@ int map[24][24] = { { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4
                     { 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5 },
                     { 2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5 },
                     { 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5 } };
-
-typedef struct {
-        int a, w, s, d, shift, ctrl, j, k;
-} ButtonKeys;
-
-typedef struct {
-        float x, y, xref, yref, button_r, button_l;
-} Mouse;
-
-typedef struct {
-        float x, y;
-        double angle, direction_x, direction_y;
-        int pitch_view;
-        ButtonKeys Buttons;
-} PLAYER;
-
-typedef struct {
-        int screen_width;
-        int screen_heigh;
-        string window_name;
-        int run_status;
-        int window_fullcreen;
-        PLAYER Player;
-
-        /* move to map */
-        int map_cols;
-        int map_rows;
-        int map_height;
-        int map_tile[32][32];
-
-        /* engine */
-        unsigned int *texture;
-} AppGame;
 
 SDL_Window *sdl_window = NULL;
 SDL_GLContext sdl_gl_context;
@@ -131,11 +87,6 @@ void update_player(AppGame *App)
                 App->Player.pitch_view += 10;
         }
         App->Player.angle = normalize_rand(App->Player.angle);
-}
-
-float dist(float ax, float ay, float bx, float by)
-{
-        return sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
@@ -392,10 +343,10 @@ void load_textures(unsigned int texture, string texture_name)
 }
 
 /* move from float to double */
-void draw_3d_view_port(int fov, AppGame *App)
+void draw_3d_view_port(AppGame *App)
 {
         int wall_high = 64, pixels_cols = App->screen_width;
-        double fov_in_rad = fov * ONE_RAD, hfov_in_rad = (fov / 2) * ONE_RAD;
+        double fov_in_rad = App->Player.fov * ONE_RAD, hfov_in_rad = (App->Player.fov / 2) * ONE_RAD;
         double pixel_in_rad = fov_in_rad / pixels_cols;
         int draw_screen_h = App->screen_heigh;
 
@@ -456,7 +407,7 @@ void draw_3d_view_flor_and_ceil(AppGame *App)
 void draw(AppGame *App)
 {
         draw_3d_view_flor_and_ceil(App);
-        draw_3d_view_port(FOV, App);
+        draw_3d_view_port(App);
         draw_aim(App);
 }
 
@@ -501,10 +452,8 @@ void engine_SDL_OpenGL_load_textures(AppGame *App)
 int main(int argc, char *args[])
 {
         srand(time(NULL));
-        AppGame App = { W, H, "Simple Wolfenstein Engine", 1, 0, { 300, 300, 0, cos(PI2), -sin(PI2), 0 } };
-        App.map_cols = 24;
-        App.map_rows = 24;
-        App.map_height = 32;
+        AppGame App = { 1920, 1080, "Simple Wolfenstein Engine", 1, 0, { 300, 300, 0, cos(PI2), -sin(PI2), 0, 70 }, 24,
+                        24,   32 };
         for (int x = 0; x < App.map_cols; x++)
                 for (int y = 0; y < App.map_rows; y++)
                         App.map_tile[x][y] = map[x][y];
