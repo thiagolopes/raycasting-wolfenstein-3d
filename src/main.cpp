@@ -15,9 +15,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-using namespace std;
-
 #include "engine.hpp"
+#include "imgui/imgui.h"
+#include "imgui/backends/imgui_impl_sdl2.h"
+#include "imgui/backends/imgui_impl_opengl3.h"
 
 int TEXTURE_LEN = 8;
 unsigned int TEXTURE[8];
@@ -142,7 +143,8 @@ void engine_SDL_OpenGL_setup(AppGame *App)
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
         sdl_window = SDL_CreateWindow(App->window_name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                      App->screen_width, App->screen_heigh, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+                                      App->screen_width, App->screen_heigh,
+                                      SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
         if (sdl_window == NULL) {
                 perror(SDL_GetError());
         }
@@ -168,9 +170,10 @@ void engine_SDL_OpenGL_setup(AppGame *App)
         if (App->window_fullcreen)
                 SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
 
-        SDL_ShowCursor(SDL_DISABLE);
-        SDL_CaptureMouse(SDL_TRUE);
-        SDL_SetRelativeMouseMode(SDL_TRUE);
+        // SDL_ShowCursor(SDL_ENABLE);
+        // SDL_CaptureMouse(SDL_TRUE);
+        // SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 }
 
 bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y)
@@ -317,7 +320,7 @@ void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
         }
 }
 
-void load_textures(unsigned int texture, string texture_name)
+void load_textures(unsigned int texture, std::string texture_name)
 {
         stbi_set_flip_vertically_on_load(1);
 
@@ -461,9 +464,23 @@ int main(int argc, char *args[])
         engine_SDL_OpenGL_setup(&App);
         engine_SDL_OpenGL_load_textures(&App);
 
+        // imgui
+        const unsigned char *glsl = glGetString(GL_SHADING_LANGUAGE_VERSION);
+        std::string glsl_s = std::to_string(*glsl);
+
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO &io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Contro
+        ImGui::StyleColorsDark();
+        ImGui_ImplSDL2_InitForOpenGL(sdl_window, sdl_gl_context);
+        ImGui_ImplOpenGL3_Init("#version 130");
+
         while (App.run_status) {
                 SDL_Event event;
                 while (SDL_PollEvent(&event) != 0) {
+                        ImGui_ImplSDL2_ProcessEvent(&event);
                         switch (event.type) {
                         case SDL_QUIT:
                                 App.run_status = 0;
@@ -496,11 +513,26 @@ int main(int argc, char *args[])
                 /* draw here */
                 draw(&App);
 
+                // Start the Dear ImGui frame
+                ImGui_ImplOpenGL3_NewFrame();
+                ImGui_ImplSDL2_NewFrame();
+                ImGui::NewFrame();
+                bool show_demo_window = true;
+                bool show_another_window = true;
+                ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+                // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+                ImGui::ShowDemoWindow(&show_demo_window);
+
                 /* update screen */
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
                 SDL_GL_SwapWindow(sdl_window);
         }
 
         /* shutdown */
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
         engine_SDL_OpenGL_shutdown();
         return 0;
 }
