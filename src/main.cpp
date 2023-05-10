@@ -58,16 +58,6 @@ int map[24][24] = { { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4
                     { 2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5 },
                     { 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5 } };
 
-/* TODO USE GLM */
-typedef struct {
-        float x, y;
-} Pointf;
-
-/* TODO USE GLM */
-typedef struct {
-        int x, y;
-} Point;
-
 typedef struct {
         int a, w, s, d, shift, ctrl, j, k;
 } ButtonKeys;
@@ -247,13 +237,12 @@ typedef struct {
         glm::ivec2 map_index;
 } DDA;
 
-void DDA_Algorith(AppGame *App, Pointf *point_collision_map, Pointf *point_direction, int *side, int *map_index_value,
-                  float *dist, float ray_total_max = 1000.0)
+void DDA_Algorith(AppGame *App, glm::fvec2 *point_collision_map, glm::fvec2 *point_direction, glm::fvec2 point_start,
+                  int *side, int *map_index_value, float *dist, float ray_total_max = 1000.0)
 {
         float ray_total = 0.0;
         bool ray_bound = false;
 
-        glm::fvec2 point_start = glm::fvec2(App->Player.x, App->Player.y);
         glm::fvec2 delta = glm::fvec2(point_direction->x / App->map_height - point_start.x / App->map_height,
                                       point_direction->y / App->map_height - point_start.y / App->map_height);
         glm::fvec2 unitary_vector = glm::fvec2(delta.x / glm::length(delta), delta.y / glm::length(delta));
@@ -377,7 +366,7 @@ void handle_mouse_pressed_up(int button, float x, float y, AppGame *App)
         }
 }
 
-void load_textures(unsigned int *texture, string texture_name)
+void load_textures(unsigned int texture, string texture_name)
 {
         stbi_set_flip_vertically_on_load(1);
 
@@ -388,7 +377,7 @@ void load_textures(unsigned int *texture, string texture_name)
         }
 
         /* init texture from file pixels to GPU MEMORY*/
-        glBindTexture(GL_TEXTURE_2D, *texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
                         GL_CLAMP_TO_BORDER); // set texture wrapping to GL_REPEAT (default wrapping method)
@@ -408,23 +397,25 @@ void draw_3d_view_port(int fov, AppGame *App)
         int wall_high = 64, pixels_cols = App->screen_width;
         double fov_in_rad = fov * ONE_RAD, hfov_in_rad = (fov / 2) * ONE_RAD;
         double pixel_in_rad = fov_in_rad / pixels_cols;
+        int draw_screen_h = App->screen_heigh;
 
         int pitch = App->Player.pitch_view; /* player look up or down */
+        glm::fvec2 point_start = glm::fvec2(App->Player.x, App->Player.y);
 
-        for (int i = 0; i < pixels_cols; i++) {
-                double angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * i));
-                Pointf point_end = { float(App->Player.x + cos(angle)), float(App->Player.y + -sin(angle)) };
-                Pointf collision_wall = { 0, 0 };
+        for (int pixel = 0; pixel < pixels_cols; pixel++) {
+                double angle =
+                        normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * pixel));
+                glm::fvec2 point_end = glm::fvec2(App->Player.x + cos(angle), App->Player.y + -sin(angle));
+                glm::fvec2 collision_wall;
                 int side, map_index_value;
                 float d2;
 
-                DDA_Algorith(App, &collision_wall, &point_end, &side, &map_index_value, &d2);
+                DDA_Algorith(App, &collision_wall, &point_end, point_start, &side, &map_index_value, &d2);
 
                 if (collision_wall.x != 0 && collision_wall.y != 0) {
-                        double d = dist(App->Player.x, App->Player.y, collision_wall.x, collision_wall.y);
+                        float d = glm::length(point_start - collision_wall);
                         d = d * cosf(App->Player.angle - angle); /* fix eye fish */
 
-                        int draw_screen_h = App->screen_heigh;
                         int line_h = (App->map_height * draw_screen_h) / (d);
                         int line_start = ((draw_screen_h / 2) - (line_h / 2)) - pitch;
                         int line_end = line_start + line_h;
@@ -437,7 +428,7 @@ void draw_3d_view_port(int fov, AppGame *App)
                                 wall_hit = double(int(collision_wall.y) % (wall_high / 2)) / (wall_high / 2);
                         }
 
-                        draw_vertical_view(App->texture[map_index_value - 1], wall_hit, line_start, line_end, i);
+                        draw_vertical_view(App->texture[map_index_value - 1], wall_hit, line_start, line_end, pixel);
                 }
         }
 }
@@ -496,14 +487,14 @@ void engine_SDL_OpenGL_load_textures(AppGame *App)
 {
         glGenTextures(TEXTURE_LEN, TEXTURE);
 
-        load_textures(&TEXTURE[0], "./textures/eagle.png");
-        load_textures(&TEXTURE[1], "./textures/redbrick.png");
-        load_textures(&TEXTURE[2], "./textures/purplestone.png");
-        load_textures(&TEXTURE[3], "./textures/greystone.png");
-        load_textures(&TEXTURE[4], "./textures/bluestone.png");
-        load_textures(&TEXTURE[5], "./textures/mossy.png");
-        load_textures(&TEXTURE[6], "./textures/wood.png");
-        load_textures(&TEXTURE[7], "./textures/colorstone.png");
+        load_textures(TEXTURE[0], "./textures/eagle.png");
+        load_textures(TEXTURE[1], "./textures/redbrick.png");
+        load_textures(TEXTURE[2], "./textures/purplestone.png");
+        load_textures(TEXTURE[3], "./textures/greystone.png");
+        load_textures(TEXTURE[4], "./textures/bluestone.png");
+        load_textures(TEXTURE[5], "./textures/mossy.png");
+        load_textures(TEXTURE[6], "./textures/wood.png");
+        load_textures(TEXTURE[7], "./textures/colorstone.png");
         App->texture = TEXTURE;
 }
 
