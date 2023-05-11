@@ -48,7 +48,7 @@ int map[24][24] = { { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4
                     { 2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5 },
                     { 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5 } };
 
-SDL_Window *sdl_window = NULL;
+SDL_Window *sdl_window = nullptr;
 SDL_GLContext sdl_gl_context;
 
 float normalize_rand(float rand)
@@ -88,6 +88,11 @@ void update_player(AppGame *App)
                 App->Player.pitch_view += 10;
         }
         App->Player.angle = normalize_rand(App->Player.angle);
+}
+
+void update(AppGame *App)
+{
+        update_player(App);
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
@@ -145,12 +150,12 @@ void engine_SDL_OpenGL_setup(AppGame *App)
         sdl_window = SDL_CreateWindow(App->window_name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                       App->screen_width, App->screen_heigh,
                                       SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
-        if (sdl_window == NULL) {
+        if (sdl_window == nullptr) {
                 perror(SDL_GetError());
         }
 
         sdl_gl_context = SDL_GL_CreateContext(sdl_window);
-        if (sdl_gl_context == NULL) {
+        if (sdl_gl_context == nullptr) {
                 perror(SDL_GetError());
         }
 
@@ -170,9 +175,9 @@ void engine_SDL_OpenGL_setup(AppGame *App)
         if (App->window_fullcreen)
                 SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
 
-        // SDL_ShowCursor(SDL_ENABLE);
-        // SDL_CaptureMouse(SDL_TRUE);
-        // SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_ShowCursor(SDL_ENABLE);
+        SDL_CaptureMouse(SDL_TRUE);
+        SDL_SetRelativeMouseMode(SDL_TRUE);
         SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 
         // imgui
@@ -210,13 +215,13 @@ void DDA_Algorith(AppGame *App, glm::fvec2 *point_collision_map, glm::fvec2 *poi
         float ray_total = 0.0;
         bool ray_bound = false;
 
-        glm::fvec2 delta = glm::fvec2(point_direction->x / App->map_height - point_start.x / App->map_height,
-                                      point_direction->y / App->map_height - point_start.y / App->map_height);
-        glm::fvec2 unitary_vector = glm::fvec2(delta.x / glm::length(delta), delta.y / glm::length(delta));
-        glm::fvec2 unitary_step_size = glm::fvec2(sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
-                                                  sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)));
+        glm::fvec2 delta(point_direction->x / App->map_height - point_start.x / App->map_height,
+                         point_direction->y / App->map_height - point_start.y / App->map_height);
+        glm::fvec2 unitary_vector(delta.x / glm::length(delta), delta.y / glm::length(delta));
+        glm::fvec2 unitary_step_size(sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
+                                     sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)));
         glm::fvec2 ray_length_1D, step;
-        glm::ivec2 tile_map_check = glm::ivec2(point_start.x, point_start.y);
+        glm::ivec2 tile_map_check(point_start.x, point_start.y);
         glm::ivec2 absolute_map_tile;
 
         /* set x walk */
@@ -376,7 +381,7 @@ void draw_3d_view_port(AppGame *App)
         for (int pixel = 0; pixel < pixels_cols; pixel++) {
                 double angle =
                         normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * pixel));
-                glm::fvec2 point_end = glm::fvec2(App->Player.x + cos(angle), App->Player.y + -sin(angle));
+                glm::fvec2 point_end(App->Player.x + cos(angle), App->Player.y + -sin(angle));
                 glm::fvec2 collision_wall;
                 int side, map_index_value;
                 float d2;
@@ -384,8 +389,8 @@ void draw_3d_view_port(AppGame *App)
                 DDA_Algorith(App, &collision_wall, &point_end, point_start, &side, &map_index_value, &d2);
 
                 if (collision_wall.x != 0 && collision_wall.y != 0) {
-                        float d = glm::length(point_start - collision_wall);
-                        d = d * cosf(App->Player.angle - angle); /* fix eye fish */
+                        // to fix the fish eye, just calculate the perpendicular ray: cosf(player angle - ray angle)
+                        float d = glm::length(point_start - collision_wall) * cosf(App->Player.angle - angle);
 
                         int line_h = (App->map_height * draw_screen_h) / (d);
                         int line_start = ((draw_screen_h / 2) - (line_h / 2)) - pitch;
@@ -426,12 +431,14 @@ void draw_3d_view_flor_and_ceil(AppGame *App)
 
 void draw_imgui(AppGame *App)
 {
+        bool show_demo = false;
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
 
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
+        if (show_demo)
+                ImGui::ShowDemoWindow();
         ImGui::Render();
 }
 
@@ -483,7 +490,7 @@ void engine_SDL_OpenGL_load_textures(AppGame *App)
 
 int main(int argc, char *args[])
 {
-        srand(time(NULL));
+        srand(time(nullptr));
         AppGame App = { 1920, 1080, "Simple Wolfenstein Engine", 1, 0, { 300, 300, 0, cos(PI2), -sin(PI2), 0, 70 }, 24,
                         24,   32 };
         for (int x = 0; x < App.map_cols; x++)
@@ -524,7 +531,7 @@ int main(int argc, char *args[])
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 /* update here */
-                update_player(&App);
+                update(&App);
 
                 /* draw here */
                 draw(&App);
