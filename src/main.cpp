@@ -63,28 +63,28 @@ float normalize_rand(float rand)
 void update_player(AppGame *App)
 {
         float magntude = 1;
-        if (App->Player.Buttons.shift == 1)
+        if (App->Buttons.shift == 1)
                 magntude = 2;
 
         /* FIX TO USE THE RELATIVE X/Y REF BASED ON THE PLAYER VIEW */
-        if (App->Player.Buttons.d == 1) {
+        if (App->Buttons.d == 1) {
                 App->Player.y -= App->Player.direction_x * magntude;
         }
-        if (App->Player.Buttons.a == 1) {
+        if (App->Buttons.a == 1) {
                 App->Player.y += App->Player.direction_x * magntude;
         }
-        if (App->Player.Buttons.w == 1) {
+        if (App->Buttons.w == 1) {
                 App->Player.x += App->Player.direction_x * magntude;
                 App->Player.y += App->Player.direction_y * magntude;
         }
-        if (App->Player.Buttons.s == 1) {
+        if (App->Buttons.s == 1) {
                 App->Player.x -= App->Player.direction_x * magntude;
                 App->Player.y -= App->Player.direction_y * magntude;
         }
-        if (App->Player.Buttons.j == 1) {
+        if (App->Buttons.j == 1) {
                 App->Player.pitch_view -= 10;
         }
-        if (App->Player.Buttons.k == 1) {
+        if (App->Buttons.k == 1) {
                 App->Player.pitch_view += 10;
         }
         App->Player.angle = normalize_rand(App->Player.angle);
@@ -102,30 +102,30 @@ static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action)
                 App->run_status = 0;
                 break;
         case SDLK_a:
-                App->Player.Buttons.a = button_action;
+                App->Buttons.a = button_action;
                 break;
         case SDLK_d:
-                App->Player.Buttons.d = button_action;
+                App->Buttons.d = button_action;
                 break;
         case SDLK_w:
-                App->Player.Buttons.w = button_action;
+                App->Buttons.w = button_action;
                 break;
         case SDLK_s:
-                App->Player.Buttons.s = button_action;
+                App->Buttons.s = button_action;
                 break;
         case SDLK_LSHIFT:
-                App->Player.Buttons.shift = button_action;
+                App->Buttons.shift = button_action;
                 break;
         case SDLK_j:
-                App->Player.Buttons.j = button_action;
-                App->Player.Buttons.k = 0;
+                App->Buttons.j = button_action;
+                App->Buttons.k = 0;
                 break;
         case SDLK_k:
-                App->Player.Buttons.k = button_action;
-                App->Player.Buttons.j = 0;
+                App->Buttons.k = button_action;
+                App->Buttons.j = 0;
                 break;
         case SDLK_LCTRL:
-                App->Player.Buttons.ctrl = button_action;
+                App->Buttons.ctrl = button_action;
                 break;
         }
 }
@@ -468,7 +468,6 @@ void handle_mouse_motion(AppGame *App, SDL_Event *event)
                 App->Player.angle += (ONE_RAD / 6) * event->motion.xrel;
                 App->Player.direction_x = cos(App->Player.angle);
                 App->Player.direction_y = -sin(App->Player.angle);
-
                 break;
         }
 }

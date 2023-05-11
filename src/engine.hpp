@@ -16,7 +16,6 @@ typedef struct {
         float x, y;
         double angle, direction_x, direction_y;
         int pitch_view, fov;
-        ButtonKeys Buttons;
 } PLAYER;
 
 typedef struct {
@@ -35,4 +34,5 @@ typedef struct {
 
         /* engine */
         unsigned int *texture;
+        ButtonKeys Buttons;
 } AppGame;
