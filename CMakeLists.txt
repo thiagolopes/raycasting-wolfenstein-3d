@@ -67,8 +67,6 @@ target_link_libraries(${BUILD_NAME} Threads::Threads)
 target_link_libraries(${BUILD_NAME} OpenGL::GL SDL2::SDL2 GLEW::GLEW m)
 
 
-
-
 # file(GLOB SOURCES
 #   "src/*.c"
 #   "src/*.cpp"
@@ -80,5 +78,5 @@ target_link_libraries(${BUILD_NAME} OpenGL::GL SDL2::SDL2 GLEW::GLEW m)
 
 #lint
 add_custom_target(lint
-    COMMAND clang-format --style=file src/*.cpp -i
+    COMMAND clang-format --style=file src/*.cpp src/*.hpp  -i
 )
