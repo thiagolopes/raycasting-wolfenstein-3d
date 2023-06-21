@@ -5,34 +5,34 @@
 #define ONE_RAD 0.0174533
 
 typedef struct {
-        int a, w, s, d, shift, ctrl, j, k;
+    int a, w, s, d, shift, ctrl, j, k;
 } ButtonKeys;
 
 typedef struct {
-        float x, y, xref, yref, button_r, button_l;
+    float x, y, xref, yref, button_r, button_l;
 } Mouse;
 
 typedef struct {
-        float x, y;
-        double angle, direction_x, direction_y;
-        int pitch_view, fov;
+    float  x, y;
+    double angle, direction_x, direction_y;
+    int    pitch_view, fov;
 } PLAYER;
 
 typedef struct {
-        int screen_width;
-        int screen_heigh;
-        std::string window_name;
-        int run_status;
-        int window_fullcreen;
-        PLAYER Player;
+    int         screen_width;
+    int         screen_heigh;
+    std::string window_name;
+    int         run_status;
+    int         window_fullcreen;
+    PLAYER      Player;
 
-        /* move to map */
-        int map_cols;
-        int map_rows;
-        int map_height;
-        int map_tile[32][32];
+    /* move to map */
+    int map_cols;
+    int map_rows;
+    int map_height;
+    int map_tile[32][32];
 
-        /* engine */
-        unsigned int *texture;
-        ButtonKeys Buttons;
+    /* engine */
+    unsigned int *texture;
+    ButtonKeys    Buttons;
 } AppGame;
