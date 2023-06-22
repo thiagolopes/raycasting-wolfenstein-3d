@@ -30,7 +30,7 @@ typedef struct {
     int map_cols;
     int map_rows;
     int map_height;
-    int map_tile[32][32];
+    int map_tile[24][24];
 
     /* engine */
     unsigned int *texture;

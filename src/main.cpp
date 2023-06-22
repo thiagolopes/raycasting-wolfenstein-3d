@@ -14,7 +14,7 @@
 #include <string>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "engine.hpp"
+#include "dda.cpp"
 #include "imgui/backends/imgui_impl_opengl3.h"
 #include "imgui/backends/imgui_impl_sdl2.h"
 #include "imgui/imgui.h"
@@ -188,82 +188,6 @@ void engine_SDL_OpenGL_setup(AppGame *App) {
     ImGui_ImplOpenGL3_Init("#version 130");
 }
 
-bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y) {
-    if (index_x >= 0 && index_x < index_max_x && index_y >= 0 && index_y < index_max_y)
-        return true;
-    else
-        return false;
-}
-
-typedef struct {
-    glm::ivec2 start_point;
-    glm::fvec2 uvec_direction_view;
-    enum { RIGTH, LEFT } side;
-    glm::ivec2 map_index;
-} DDA;
-
-void DDA_Algorith(AppGame *App, glm::fvec2 *point_collision_map, glm::fvec2 *point_direction, glm::fvec2 point_start,
-                  int *side, int *map_index_value, float *dist, float ray_total_max = 1000.0) {
-    float ray_total = 0.0;
-    bool  ray_bound = false;
-
-    glm::fvec2 delta(point_direction->x / App->map_height - point_start.x / App->map_height,
-                     point_direction->y / App->map_height - point_start.y / App->map_height);
-    glm::fvec2 unitary_vector(delta.x / glm::length(delta), delta.y / glm::length(delta));
-    glm::fvec2 unitary_step_size(sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
-                                 sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)));
-    glm::fvec2 ray_length_1D, step;
-    glm::ivec2 tile_map_check(point_start.x, point_start.y);
-    glm::ivec2 absolute_map_tile;
-
-    /* set x walk */
-    if (unitary_vector.x < 0) {
-        step.x          = -1;
-        ray_length_1D.x = (point_start.x - tile_map_check.x) * unitary_step_size.x;
-    } else {
-        step.x          = 1;
-        ray_length_1D.x = ((tile_map_check.x + 1) - point_start.x) * unitary_step_size.x;
-    }
-
-    /* set y walk */
-    if (unitary_vector.y < 0) {
-        step.y          = -1;
-        ray_length_1D.y = (point_start.y - tile_map_check.y) * unitary_step_size.y;
-    } else {
-        step.y          = 1;
-        ray_length_1D.y = ((tile_map_check.y + 1) - point_start.y) * unitary_step_size.y;
-    }
-
-    while (!ray_bound && ray_total < ray_total_max) {
-        /* walk */
-        if (ray_length_1D.x < ray_length_1D.y) {
-            tile_map_check.x += step.x;
-            ray_total = ray_length_1D.x;
-            ray_length_1D.x += unitary_step_size.x;
-            *side = 0; /* vertical */
-        } else {
-            tile_map_check.y += step.y;
-            ray_total = ray_length_1D.y;
-            ray_length_1D.y += unitary_step_size.y;
-            *side = 1; /* horizontal */
-        }
-
-        /* check */
-        absolute_map_tile.x = tile_map_check.x / App->map_height;
-        absolute_map_tile.y = tile_map_check.y / App->map_height;
-        if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, App->map_cols, App->map_rows) == 1
-            && App->map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
-            ray_bound        = true;
-            *map_index_value = App->map_tile[absolute_map_tile.y][absolute_map_tile.x];
-        }
-    }
-
-    if (ray_bound == true) {
-        point_collision_map->x = point_start.x + unitary_vector.x * ray_total;
-        point_collision_map->y = point_start.y + unitary_vector.y * ray_total;
-    }
-}
-
 void engine_SDL_OpenGL_shutdown() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
@@ -356,8 +280,10 @@ void load_textures(unsigned int texture, std::string texture_name) {
 
 /* move from float to double */
 void draw_3d_view_port(AppGame *App) {
-    int    wall_high = 64, pixels_cols = App->screen_width;
-    double fov_in_rad = App->Player.fov * ONE_RAD, hfov_in_rad = (App->Player.fov / 2) * ONE_RAD;
+    int    wall_high     = 64;
+    int    pixels_cols   = App->screen_width;
+    double fov_in_rad    = App->Player.fov * ONE_RAD;
+    double hfov_in_rad   = (App->Player.fov / 2) * ONE_RAD;
     double pixel_in_rad  = fov_in_rad / pixels_cols;
     int    draw_screen_h = App->screen_heigh;
 
@@ -367,30 +293,27 @@ void draw_3d_view_port(AppGame *App) {
     for (int pixel = 0; pixel < pixels_cols; pixel++) {
         double     angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * pixel));
         glm::fvec2 point_end(App->Player.x + cos(angle), App->Player.y + -sin(angle));
-        glm::fvec2 == collision_wall;
-        int   side, map_index_value;
-        float d2;
+        DDA_ray_collision ray_collision = DDA(App, point_end, point_start);
 
-        DDA_Algorith(App, &collision_wall, &point_end, point_start, &side, &map_index_value, &d2);
-
-        if (collision_wall.x != 0 && collision_wall.y != 0) {
+        if (ray_collision.collision_point.x != 0 && ray_collision.collision_point.y != 0) {
             // to fix the fish eye, just calculate the perpendicular ray: cosf(player angle - ray
             // angle)
-            float d = glm::length(point_start - collision_wall) * cosf(App->Player.angle - angle);
+            float d = glm::length(point_start - ray_collision.collision_point) * cosf(App->Player.angle - angle);
 
             int line_h     = (App->map_height * draw_screen_h) / (d);
             int line_start = ((draw_screen_h / 2) - (line_h / 2)) - pitch;
             int line_end   = line_start + line_h;
 
             double wall_hit;
-            if (side == 1) {
+            if (ray_collision.side == 1) {
                 /* for some reason wall_high is divived by 2 */
-                wall_hit = double(int(collision_wall.x) % (wall_high / 2)) / (wall_high / 2);
+                wall_hit = double(int(ray_collision.collision_point.x) % (wall_high / 2)) / (wall_high / 2);
             } else {
-                wall_hit = double(int(collision_wall.y) % (wall_high / 2)) / (wall_high / 2);
+                wall_hit = double(int(ray_collision.collision_point.y) % (wall_high / 2)) / (wall_high / 2);
             }
 
-            draw_vertical_view(App->texture[map_index_value - 1], wall_hit, line_start, line_end, pixel);
+            draw_vertical_view(App->texture[ray_collision.grid_index_collision - 1], wall_hit, line_start, line_end,
+                               pixel);
         }
     }
 }

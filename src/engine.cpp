@@ -1,6 +1,6 @@
 #include <GL/gl.h>
 
-static void draw_vertical_view(int texture, double texture_of, int pixel_start, int pixel_end, int vertical_pixel) {
+void draw_vertical_view(int texture, double texture_of, int pixel_start, int pixel_end, int vertical_pixel) {
     glColor3f(1, 1, 1);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texture);
