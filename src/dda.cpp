@@ -94,28 +94,26 @@ bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_
         return false;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//           ────────────────────────────────x─────────────────────────────────     //
-//                          xx  P1        P2 x                                      //
-//        (P1)The calculated xx              x   To fix the fish eye, just          //
-// Ray has distortions based   xx            x     calculate perpendicular ray (P2) //
-// with the center, due to      xx           x     P1 * cos(angle)                  //
-// ray "casting" the screen.     xx          x                                      //
-//                                xx         x                                      //
-//                                 xx        x                                      //
-//         The distortion cause     xx       x                                      //
-//         the Fish Eye illusion     xx      x                                      //
-//                                    xx     x                                      //
-//                                     xx    x                                      //
-//                                      xx   x                                      //
-//                                       xx  x                                      //
-//                                        xx x                                      //
-//                                          xx                                      //
-//                                        ┌──x──┐                                   //
-//                                        │     │                                   //
-//                                        │     │                                   //
-//                                        └─────┘                                   //
-//////////////////////////////////////////////////////////////////////////////////////
+//           ────────────────────────────────x─────────────────────────────────
+//                          xx  P1        P2 x
+//        (P1)The calculated xx              x   To fix the fish eye, just
+// Ray has distortions based   xx            x     calculate perpendicular ray (P2)
+// with the center, due to      xx           x     P1 * cos(angle)
+// ray "casting" the screen.     xx          x
+//                                xx         x
+//                                 xx        x
+//         The distortion cause     xx       x
+//         the Fish Eye illusion     xx      x
+//                                    xx     x
+//                                     xx    x
+//                                      xx   x
+//                                       xx  x
+//                                        xx x
+//                                          xx
+//                                        ┌──x──┐
+//                                        │     │
+//                                        │     │
+//                                        └─────┘
 float fix_eye_fish(glm::fvec2 point_start, glm::fvec2 collision_point, float angle) {
     return glm::length(point_start - collision_point) * cosf(angle);
 }
