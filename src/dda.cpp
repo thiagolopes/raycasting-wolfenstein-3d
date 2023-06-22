@@ -1,18 +1,11 @@
-#include <stdio.h>
-
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
-
-#include "engine.hpp"
-#include "map.hpp"
 
 // structs
 typedef enum { VERTICAL, HORIZONTAL } side_t;
 
 typedef struct DDA_init {
-    MapCanvas *grid_canvas;
-    int        map_height;
-    int        map_len; // todo use map memory
+    int (*map_grid)[];
     glm::fvec2 point_direction;
     glm::fvec2 point_start;
     float      dda_walk_max = 1000.0;
@@ -25,16 +18,19 @@ typedef struct {
 } DDA_ray_collision;
 
 // declarations
-bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y);
+bool              check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y);
+DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_direction,
+                      glm::fvec2 point_start);
 // main
-DDA_ray_collision DDA(AppGame *App, glm::fvec2 point_direction, glm::fvec2 point_start) {
+DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_direction,
+                      glm::fvec2 point_start) {
     DDA_ray_collision dda_return;
     float             ray_total_max = 1000.0;
     float             ray_total     = 0.0;
     bool              ray_bound     = false;
 
-    glm::fvec2 delta(point_direction.x / App->map_height - point_start.x / App->map_height,
-                     point_direction.y / App->map_height - point_start.y / App->map_height);
+    glm::fvec2 delta(point_direction.x / map_height - point_start.x / map_height,
+                     point_direction.y / map_height - point_start.y / map_height);
     glm::fvec2 unitary_vector(delta.x / glm::length(delta), delta.y / glm::length(delta));
     glm::fvec2 unitary_step_size(sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
                                  sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)));
@@ -75,12 +71,12 @@ DDA_ray_collision DDA(AppGame *App, glm::fvec2 point_direction, glm::fvec2 point
         }
 
         /* check */
-        absolute_map_tile.x = tile_map_check.x / App->map_height;
-        absolute_map_tile.y = tile_map_check.y / App->map_height;
-        if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, App->map_cols, App->map_rows) == 1
-            && App->map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
+        absolute_map_tile.x = tile_map_check.x / map_height;
+        absolute_map_tile.y = tile_map_check.y / map_height;
+        if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, map_len, map_len) == true
+            && map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
             ray_bound                       = true;
-            dda_return.grid_index_collision = App->map_tile[absolute_map_tile.y][absolute_map_tile.x];
+            dda_return.grid_index_collision = map_tile[absolute_map_tile.y][absolute_map_tile.x];
         }
     }
 
@@ -96,4 +92,30 @@ bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_
         return true;
     else
         return false;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//           ────────────────────────────────x─────────────────────────────────     //
+//                          xx  P1        P2 x                                      //
+//        (P1)The calculated xx              x   To fix the fish eye, just          //
+// Ray has distortions based   xx            x     calculate perpendicular ray (P2) //
+// with the center, due to      xx           x     P1 * cos(angle)                  //
+// ray "casting" the screen.     xx          x                                      //
+//                                xx         x                                      //
+//                                 xx        x                                      //
+//         The distortion cause     xx       x                                      //
+//         the Fish Eye illusion     xx      x                                      //
+//                                    xx     x                                      //
+//                                     xx    x                                      //
+//                                      xx   x                                      //
+//                                       xx  x                                      //
+//                                        xx x                                      //
+//                                          xx                                      //
+//                                        ┌──x──┐                                   //
+//                                        │     │                                   //
+//                                        │     │                                   //
+//                                        └─────┘                                   //
+//////////////////////////////////////////////////////////////////////////////////////
+float fix_eye_fish(glm::fvec2 point_start, glm::fvec2 collision_point, float angle) {
+    return glm::length(point_start - collision_point) * cosf(angle);
 }

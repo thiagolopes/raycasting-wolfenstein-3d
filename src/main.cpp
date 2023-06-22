@@ -20,6 +20,44 @@
 #include "imgui/imgui.h"
 #include "stb_image.h"
 
+#define PI 3.141592
+#define PI2 6.283185
+#define ONE_RAD 0.0174533
+
+// definitions
+typedef struct {
+    int a, w, s, d, shift, ctrl, j, k;
+} ButtonKeys;
+
+typedef struct {
+    float x, y, xref, yref, button_r, button_l;
+} Mouse;
+
+typedef struct {
+    float  x, y;
+    double angle, direction_x, direction_y;
+    int    pitch_view, fov;
+} PLAYER;
+
+typedef struct {
+    int         screen_width;
+    int         screen_heigh;
+    std::string window_name;
+    int         run_status;
+    int         window_fullcreen;
+    PLAYER      Player;
+
+    /* move to map */
+    int map_cols;
+    int map_rows;
+    int map_height;
+    int map_tile[24][24];
+
+    /* engine */
+    unsigned int *texture;
+    ButtonKeys    Buttons;
+} AppGame;
+
 int          TEXTURE_LEN = 8;
 unsigned int TEXTURE[8];
 
@@ -51,6 +89,7 @@ int map[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 
 SDL_Window   *sdl_window = nullptr;
 SDL_GLContext sdl_gl_context;
 
+// methods
 void draw_vertical_view(int texture, double texture_of, int pixel_start, int pixel_end, int vertical_pixel) {
     glColor3f(1, 1, 1);
     glEnable(GL_TEXTURE_2D);
@@ -307,22 +346,21 @@ void draw_3d_view_port(AppGame *App) {
     glm::fvec2 point_start = glm::fvec2(App->Player.x, App->Player.y);
 
     for (int pixel = 0; pixel < pixels_cols; pixel++) {
-        double     angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + (pixel_in_rad * pixel));
+        double     angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + pixel_in_rad * pixel);
         glm::fvec2 point_end(App->Player.x + cos(angle), App->Player.y + -sin(angle));
-        DDA_ray_collision ray_collision = DDA(App, point_end, point_start);
+
+        DDA_ray_collision ray_collision = DDA(App->map_tile, App->map_height, App->map_cols, point_end, point_start);
 
         if (ray_collision.collision_point.x != 0 && ray_collision.collision_point.y != 0) {
-            // to fix the fish eye, just calculate the perpendicular ray: cosf(player angle - ray
-            // angle)
-            float d = glm::length(point_start - ray_collision.collision_point) * cosf(App->Player.angle - angle);
+            float distance = fix_eye_fish(point_start, ray_collision.collision_point, (App->Player.angle - angle));
 
-            int line_h     = (App->map_height * draw_screen_h) / (d);
-            int line_start = ((draw_screen_h / 2) - (line_h / 2)) - pitch;
+            int line_h     = (App->map_height * draw_screen_h) / distance;
+            int line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
             int line_end   = line_start + line_h;
 
             double wall_hit;
             if (ray_collision.side == 1) {
-                /* for some reason wall_high is divived by 2 */
+                /* for some reason wall_high is divived by 2 LOL */
                 wall_hit = double(int(ray_collision.collision_point.x) % (wall_high / 2)) / (wall_high / 2);
             } else {
                 wall_hit = double(int(ray_collision.collision_point.y) % (wall_high / 2)) / (wall_high / 2);
@@ -407,6 +445,7 @@ void engine_SDL_OpenGL_load_textures(AppGame *App) {
     App->texture = TEXTURE;
 }
 
+// main
 int main(int argc, char *args[]) {
     srand(time(nullptr));
     AppGame App = {1920, 1080, "Simple Wolfenstein Engine", 1, 0, {300, 300, 0, cos(PI2), -sin(PI2), 0, 70}, 24,
