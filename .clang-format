@@ -21,4 +21,6 @@ AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Inline
 SpacesBeforeTrailingComments: 1
 BreakBeforeBinaryOperators: NonAssignment
+SortIncludes: false
+IncludeBlocks: Preserve
 ...
