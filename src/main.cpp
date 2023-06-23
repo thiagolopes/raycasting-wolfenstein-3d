@@ -247,13 +247,12 @@ void load_textures(unsigned int texture, std::string texture_name) {
 }
 
 void draw_3d_view_port(AppGame *App) {
-    int pixels_cols   = App->screen_width;
-    int draw_screen_h = App->screen_height;
-    int wall_height   = App->map_height;
-    int map_len       = App->map_cols;
-    int(*map)[24]     = App->map_tile;
-    int pitch         = App->Player.pitch_view; /* player look up or down */
-
+    int pixels_cols    = App->screen_width;
+    int draw_screen_h  = App->screen_height;
+    int wall_height    = App->map_height;
+    int map_len        = App->map_cols;
+    int(*map)[24]      = App->map_tile;
+    int   pitch        = App->Player.pitch_view; /* player look up or down */
     float player_angle = App->Player.angle;
     float fov_in_rad   = App->Player.fov * ONE_RAD;
     float hfov_in_rad  = (App->Player.fov / 2) * ONE_RAD;
@@ -265,7 +264,7 @@ void draw_3d_view_port(AppGame *App) {
         int        line_h;
         int        line_start;
         int        line_end;
-        float      wall_hit;
+        float      texture_offset;
         float      angle;
         float      distance;
         glm::fvec2 point_end;
@@ -286,12 +285,12 @@ void draw_3d_view_port(AppGame *App) {
             line_end   = line_start + line_h;
 
             if (ray_collision.side == HORIZONTAL) {
-                wall_hit = float(int(ray_collision.collision_point.x) % wall_height) / wall_height;
+                texture_offset = float(int(ray_collision.collision_point.x) % wall_height) / wall_height;
             } else {
-                wall_hit = float(int(ray_collision.collision_point.y) % wall_height) / wall_height;
+                texture_offset = float(int(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
 
-            draw_vertical_line(pixel, line_start, line_end, ray_collision.grid_index_collision, wall_hit, WHITE);
+            draw_vertical_line(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset, WHITE);
         }
     }
 }
