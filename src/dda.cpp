@@ -1,18 +1,49 @@
 #include <glm/glm.hpp>
 
-// structs
 typedef enum { VERTICAL, HORIZONTAL } side_t;
-
 typedef struct {
-    glm::fvec2 collision_point;      // ponto da collision
-    int        grid_index_collision; // index do grid da collision
-    side_t     side;                 // qual lado do grid foi a collision
+    glm::fvec2 collision_point;
+    int        grid_index_collision;
+    side_t     side;
 } DDA_t;
 
-// declarations
-bool  check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y);
-DDA_t DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_direction, glm::fvec2 point_start);
-// main
+bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y) {
+    if (index_x >= 0 && index_x < index_max_x && index_y >= 0 && index_y < index_max_y)
+        return true;
+    return false;
+}
+
+float fix_eye_fish(glm::fvec2 ray, float angle) {
+    //                                                                              Wall
+    // |─────────────────────────────────────────x─────────────────────────────────|
+    //                          xx  P1        P2 x
+    //        (P1)The calculated xx              x   To fix the fish eye, just
+    // Ray has distortions based   xx            x     calculate perpendicular ray (P2)
+    // with the center, due to      xx           x     P1 * cos(angle)
+    // ray "casting" the screen.     xx          x
+    //                                xx         x
+    //                                 xx        x
+    //         The distortion cause     xx       x
+    //         the Fish Eye illusion     xx      x
+    //                                    xx     x
+    //                                     xx    x
+    //                                      xx   x
+    //                                       xx  x
+    //                                        xx x
+    //                                          xx          "Camera view"
+    //                                |──────────x──────────|
+    //
+    return glm::length(ray) * cosf(angle);
+}
+
+float normalize_rand(float rand) {
+    if (rand > PI2)
+        return rand - PI2;
+    if (rand < 0)
+        return rand + PI2;
+    return rand;
+}
+
 DDA_t DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_direction, glm::fvec2 point_start) {
     DDA_t dda_return;
     float ray_total_max = 1000.0;
@@ -81,42 +112,4 @@ DDA_t DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_di
         dda_return.collision_point.y = 0;
     }
     return dda_return;
-}
-
-bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y) {
-    if (index_x >= 0 && index_x < index_max_x && index_y >= 0 && index_y < index_max_y)
-        return true;
-    return false;
-}
-
-//           ────────────────────────────────x─────────────────────────────────
-//                          xx  P1        P2 x
-//        (P1)The calculated xx              x   To fix the fish eye, just
-// Ray has distortions based   xx            x     calculate perpendicular ray (P2)
-// with the center, due to      xx           x     P1 * cos(angle)
-// ray "casting" the screen.     xx          x
-//                                xx         x
-//                                 xx        x
-//         The distortion cause     xx       x
-//         the Fish Eye illusion     xx      x
-//                                    xx     x
-//                                     xx    x
-//                                      xx   x
-//                                       xx  x
-//                                        xx x
-//                                          xx
-//                                        ┌──x──┐
-//                                        │     │
-//                                        │     │
-//                                        └─────┘
-float fix_eye_fish(glm::fvec2 ray, float angle) {
-    return glm::length(ray) * cosf(angle);
-}
-
-float normalize_rand(float rand) {
-    if (rand > PI2)
-        return rand - PI2;
-    if (rand < 0)
-        return rand + PI2;
-    return rand;
 }
