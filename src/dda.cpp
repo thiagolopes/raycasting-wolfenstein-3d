@@ -52,7 +52,7 @@ DDA_t DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_di
 
     glm::fvec2 delta(point_direction.x / map_height - point_start.x / map_height,
                      point_direction.y / map_height - point_start.y / map_height);
-    glm::fvec2 unitary_vector(delta.x / glm::length(delta), delta.y / glm::length(delta));
+    glm::fvec2 unitary_vector = glm::normalize(delta);
     glm::fvec2 unitary_step_size(sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
                                  sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)));
     glm::fvec2 ray_length_1D;
