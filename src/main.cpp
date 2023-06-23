@@ -8,16 +8,14 @@
 #include <SDL2/SDL_opengl.h>
 #include <math.h>
 #include <time.h>
-
-#include <glm/glm.hpp>
 #include <iostream>
 #include <string>
 
 // internal
+#include "main.h"
 #include "colors.h"
 #include "dda.cpp"
 #include "draw.cpp"
-#include "main.h"
 
 // imgui
 #include "imgui/backends/imgui_impl_opengl3.h"
