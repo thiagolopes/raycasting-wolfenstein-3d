@@ -31,7 +31,8 @@ DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fv
     glm::ivec2 tile_map_check(point_start.x, point_start.y);
     glm::ivec2 absolute_map_tile;
 
-    /* set x walk */
+    // set the initial ray direction y or x
+    /* set walk to x */
     if (unitary_vector.x < 0) {
         step.x          = -1;
         ray_length_1D.x = (point_start.x - tile_map_check.x) * unitary_step_size.x;
@@ -40,7 +41,7 @@ DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fv
         ray_length_1D.x = ((tile_map_check.x + 1) - point_start.x) * unitary_step_size.x;
     }
 
-    /* set y walk */
+    /* set walk to y */
     if (unitary_vector.y < 0) {
         step.y          = -1;
         ray_length_1D.y = (point_start.y - tile_map_check.y) * unitary_step_size.y;
@@ -49,8 +50,8 @@ DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fv
         ray_length_1D.y = ((tile_map_check.y + 1) - point_start.y) * unitary_step_size.y;
     }
 
+    /* start walk until collision or max */
     while (!ray_bound && ray_total < ray_total_max) {
-        /* walk */
         if (ray_length_1D.x < ray_length_1D.y) {
             tile_map_check.x += step.x;
             ray_total = ray_length_1D.x;
@@ -63,7 +64,7 @@ DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fv
             dda_return.side = HORIZONTAL; /* horizontal */
         }
 
-        /* check */
+        /* check in the map if has a wall */
         absolute_map_tile.x = tile_map_check.x / map_height;
         absolute_map_tile.y = tile_map_check.y / map_height;
         if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, map_len, map_len) == true
