@@ -335,12 +335,12 @@ void load_textures(unsigned int texture, std::string texture_name) {
 
 /* move from float to double */
 void draw_3d_view_port(AppGame *App) {
-    int    wall_high     = 64;
     int    pixels_cols   = App->screen_width;
     double fov_in_rad    = App->Player.fov * ONE_RAD;
     double hfov_in_rad   = (App->Player.fov / 2) * ONE_RAD;
     double pixel_in_rad  = fov_in_rad / pixels_cols;
     int    draw_screen_h = App->screen_heigh;
+    int    wall_height   = App->map_height;
 
     int        pitch       = App->Player.pitch_view; /* player look up or down */
     glm::fvec2 point_start = glm::fvec2(App->Player.x, App->Player.y);
@@ -350,7 +350,7 @@ void draw_3d_view_port(AppGame *App) {
         glm::fvec2 point_end(App->Player.x + cos(angle), App->Player.y + -sin(angle));
 
         DDA_ray_collision ray_collision = DDA(App->map_tile, App->map_height, App->map_cols, point_end, point_start);
-
+        // avoid infinty ray
         if (ray_collision.collision_point.x != 0 && ray_collision.collision_point.y != 0) {
             float distance = fix_eye_fish(point_start - ray_collision.collision_point, App->Player.angle - angle);
 
@@ -359,15 +359,14 @@ void draw_3d_view_port(AppGame *App) {
             int line_end   = line_start + line_h;
 
             double wall_hit;
-            if (ray_collision.side == 1) {
-                /* for some reason wall_high is divived by 2 LOL */
-                wall_hit = double(int(ray_collision.collision_point.x) % (wall_high / 2)) / (wall_high / 2);
+            if (ray_collision.side == HORIZONTAL) {
+                wall_hit = double(int(ray_collision.collision_point.x) % wall_height) / wall_height;
             } else {
-                wall_hit = double(int(ray_collision.collision_point.y) % (wall_high / 2)) / (wall_high / 2);
+                wall_hit = double(int(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
 
-            draw_vertical_view(App->texture[ray_collision.grid_index_collision - 1], wall_hit, line_start, line_end,
-                               pixel);
+            ray_collision.grid_index_collision -= 1; // remove 1 to fix the map id offset
+            draw_vertical_view(App->texture[ray_collision.grid_index_collision], wall_hit, line_start, line_end, pixel);
         }
     }
 }

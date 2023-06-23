@@ -4,17 +4,10 @@
 // structs
 typedef enum { VERTICAL, HORIZONTAL } side_t;
 
-typedef struct DDA_init {
-    int (*map_grid)[];
-    glm::fvec2 point_direction;
-    glm::fvec2 point_start;
-    float      dda_walk_max = 1000.0;
-} DDA_init;
-
 typedef struct {
     glm::fvec2 collision_point;      // ponto da collision
     int        grid_index_collision; // index do grid da collision
-    int        side;                 // qual lado do grid foi a collision
+    side_t     side;                 // qual lado do grid foi a collision
 } DDA_ray_collision;
 
 // declarations
@@ -62,12 +55,12 @@ DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fv
             tile_map_check.x += step.x;
             ray_total = ray_length_1D.x;
             ray_length_1D.x += unitary_step_size.x;
-            dda_return.side = 0; /* vertical */
+            dda_return.side = VERTICAL; /* vertical */
         } else {
             tile_map_check.y += step.y;
             ray_total = ray_length_1D.y;
             ray_length_1D.y += unitary_step_size.y;
-            dda_return.side = 1; /* horizontal */
+            dda_return.side = HORIZONTAL; /* horizontal */
         }
 
         /* check */
@@ -83,6 +76,9 @@ DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fv
     if (ray_bound == true) {
         dda_return.collision_point.x = point_start.x + unitary_vector.x * ray_total;
         dda_return.collision_point.y = point_start.y + unitary_vector.y * ray_total;
+    } else {
+        dda_return.collision_point.x = 0;
+        dda_return.collision_point.y = 0;
     }
     return dda_return;
 }
