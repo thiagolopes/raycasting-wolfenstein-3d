@@ -13,107 +13,22 @@
 #include <iostream>
 #include <string>
 
-#define STB_IMAGE_IMPLEMENTATION
+// internal
+#include "colors.h"
 #include "dda.cpp"
+#include "draw.cpp"
+#include "main.h"
+
+// imgui
 #include "imgui/backends/imgui_impl_opengl3.h"
 #include "imgui/backends/imgui_impl_sdl2.h"
 #include "imgui/imgui.h"
+
+// stb
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define PI 3.141592
-#define PI2 6.283185
-#define ONE_RAD 0.0174533
-
-// definitions
-typedef struct {
-    int a, w, s, d, shift, ctrl, j, k;
-} ButtonKeys;
-
-typedef struct {
-    float x, y, xref, yref, button_r, button_l;
-} Mouse;
-
-typedef struct {
-    float  x, y;
-    double angle, direction_x, direction_y;
-    int    pitch_view, fov;
-} PLAYER;
-
-typedef struct {
-    int         screen_width;
-    int         screen_heigh;
-    std::string window_name;
-    int         run_status;
-    int         window_fullcreen;
-    PLAYER      Player;
-
-    /* move to map */
-    int map_cols;
-    int map_rows;
-    int map_height;
-    int map_tile[24][24];
-
-    /* engine */
-    unsigned int *texture;
-    ButtonKeys    Buttons;
-} AppGame;
-
-int          TEXTURE_LEN = 8;
-unsigned int TEXTURE[8];
-
-int map[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6, 4},
-                   {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
-                   {8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-                   {8, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-                   {8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
-                   {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 6, 6, 6, 0, 6, 4, 6},
-                   {8, 8, 8, 8, 0, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4, 6, 0, 0, 0, 0, 0, 6},
-                   {7, 7, 7, 7, 0, 7, 7, 7, 7, 0, 8, 0, 8, 0, 8, 0, 8, 4, 0, 4, 0, 6, 0, 6},
-                   {7, 7, 0, 0, 0, 0, 0, 0, 7, 8, 0, 8, 0, 8, 0, 8, 8, 6, 0, 0, 0, 0, 0, 6},
-                   {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 0, 0, 0, 0, 4},
-                   {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 6, 0, 6, 0, 6},
-                   {7, 7, 0, 0, 0, 0, 0, 0, 7, 8, 0, 8, 0, 8, 0, 8, 8, 6, 4, 6, 0, 6, 6, 6},
-                   {7, 7, 7, 7, 0, 7, 7, 7, 7, 8, 8, 4, 0, 6, 8, 4, 8, 3, 3, 3, 0, 3, 3, 3},
-                   {2, 2, 2, 2, 0, 2, 2, 2, 2, 4, 6, 4, 0, 0, 6, 0, 6, 3, 0, 0, 0, 0, 0, 3},
-                   {2, 2, 0, 0, 0, 0, 0, 2, 2, 4, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 3},
-                   {2, 0, 0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 3},
-                   {1, 0, 0, 0, 0, 0, 0, 0, 1, 4, 4, 4, 4, 4, 6, 0, 6, 3, 3, 0, 0, 0, 3, 3},
-                   {2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 2, 2, 2, 6, 6, 0, 0, 5, 0, 5, 0, 5},
-                   {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
-                   {2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5},
-                   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5},
-                   {2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5},
-                   {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
-                   {2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5}};
-
-SDL_Window   *sdl_window = nullptr;
-SDL_GLContext sdl_gl_context;
-
 // methods
-void draw_vertical_view(int texture, double texture_of, int pixel_start, int pixel_end, int vertical_pixel) {
-    glColor3f(1, 1, 1);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glBegin(GL_LINES);
-
-    glTexCoord2d(texture_of, 1.0);
-    glVertex2i(vertical_pixel, pixel_start);
-
-    glTexCoord2d(texture_of, 0.0);
-    glVertex2i(vertical_pixel, pixel_end);
-
-    glEnd();
-    glDisable(GL_TEXTURE_2D);
-}
-
-float normalize_rand(float rand) {
-    if (rand > PI2)
-        return rand - PI2;
-    if (rand < 0)
-        return rand + PI2;
-    return rand;
-}
-
 void update_player(AppGame *App) {
     float magntude = 1;
     if (App->Buttons.shift == 1)
@@ -198,7 +113,7 @@ void engine_SDL_OpenGL_setup(AppGame *App) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     sdl_window = SDL_CreateWindow(App->window_name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                  App->screen_width, App->screen_heigh, SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
+                                  App->screen_width, App->screen_height, SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
     if (sdl_window == nullptr) {
         perror(SDL_GetError());
     }
@@ -216,7 +131,7 @@ void engine_SDL_OpenGL_setup(AppGame *App) {
     /* init opengl view */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, App->screen_width, App->screen_heigh, 0, 1, -1);
+    glOrtho(0, App->screen_width, App->screen_height, 0, 1, -1);
     glMatrixMode(GL_MODELVIEW);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -272,7 +187,7 @@ void draw_aim(AppGame *App) {
     glBegin(GL_POINTS);
     for (int i = 0; i < 20; i++) {
         int x = App->screen_width / 2;
-        int y = (App->screen_heigh / 2) - 10;
+        int y = (App->screen_height / 2) - 10;
 
         glReadPixels(x, y + i, 1, 1, GL_RGB, GL_FLOAT, &pixel);
         glColor3f(pixel[0], pixel[1], pixel[2]);
@@ -288,7 +203,7 @@ void draw_aim(AppGame *App) {
 
     for (int i = 0; i < 20; i++) {
         int x = (App->screen_width / 2) - 10;
-        int y = (App->screen_heigh / 2);
+        int y = (App->screen_height / 2);
 
         glReadPixels(x + i, y, 1, 1, GL_RGB, GL_FLOAT, &pixel);
         glColor3f(pixel[0], pixel[1], pixel[2]);
@@ -333,61 +248,60 @@ void load_textures(unsigned int texture, std::string texture_name) {
     stbi_image_free(data);
 }
 
-/* move from float to double */
 void draw_3d_view_port(AppGame *App) {
-    int    pixels_cols   = App->screen_width;
-    double fov_in_rad    = App->Player.fov * ONE_RAD;
-    double hfov_in_rad   = (App->Player.fov / 2) * ONE_RAD;
-    double pixel_in_rad  = fov_in_rad / pixels_cols;
-    int    draw_screen_h = App->screen_heigh;
-    int    wall_height   = App->map_height;
+    int pixels_cols   = App->screen_width;
+    int draw_screen_h = App->screen_height;
+    int wall_height   = App->map_height;
+    int map_len       = App->map_cols;
+    int(*map)[24]     = App->map_tile;
+    int pitch         = App->Player.pitch_view; /* player look up or down */
 
-    int        pitch       = App->Player.pitch_view; /* player look up or down */
+    float player_angle = App->Player.angle;
+    float fov_in_rad   = App->Player.fov * ONE_RAD;
+    float hfov_in_rad  = (App->Player.fov / 2) * ONE_RAD;
+    float pixel_in_rad = fov_in_rad / pixels_cols;
+
     glm::fvec2 point_start = glm::fvec2(App->Player.x, App->Player.y);
 
     for (int pixel = 0; pixel < pixels_cols; pixel++) {
-        double     angle = normalize_rand(normalize_rand(App->Player.angle - hfov_in_rad) + pixel_in_rad * pixel);
-        glm::fvec2 point_end(App->Player.x + cos(angle), App->Player.y + -sin(angle));
+        int        line_h;
+        int        line_start;
+        int        line_end;
+        float      wall_hit;
+        float      angle;
+        float      distance;
+        glm::fvec2 point_end;
+        DDA_t      ray_collision;
 
-        DDA_ray_collision ray_collision = DDA(App->map_tile, App->map_height, App->map_cols, point_end, point_start);
+        angle       = normalize_rand(normalize_rand(player_angle - hfov_in_rad) + pixel_in_rad * pixel);
+        point_end.x = point_start.x + cos(angle);
+        point_end.y = point_start.y + -sin(angle);
+
+        ray_collision = DDA(map, wall_height, map_len, point_end, point_start);
+
         // avoid infinty ray
         if (ray_collision.collision_point.x != 0 && ray_collision.collision_point.y != 0) {
-            float distance = fix_eye_fish(point_start - ray_collision.collision_point, App->Player.angle - angle);
+            distance = fix_eye_fish(point_start - ray_collision.collision_point, player_angle - angle);
 
-            int line_h     = (App->map_height * draw_screen_h) / distance;
-            int line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
-            int line_end   = line_start + line_h;
+            line_h     = (wall_height * draw_screen_h) / distance;
+            line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
+            line_end   = line_start + line_h;
 
-            double wall_hit;
             if (ray_collision.side == HORIZONTAL) {
-                wall_hit = double(int(ray_collision.collision_point.x) % wall_height) / wall_height;
+                wall_hit = float(int(ray_collision.collision_point.x) % wall_height) / wall_height;
             } else {
-                wall_hit = double(int(ray_collision.collision_point.y) % wall_height) / wall_height;
+                wall_hit = float(int(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
 
-            ray_collision.grid_index_collision -= 1; // remove 1 to fix the map id offset
-            draw_vertical_view(App->texture[ray_collision.grid_index_collision], wall_hit, line_start, line_end, pixel);
+            draw_vertical_line(pixel, line_start, line_end, ray_collision.grid_index_collision, wall_hit, WHITE);
         }
     }
 }
 
-void draw_3d_view_flor_and_ceil(AppGame *App) {
-    int center_h = App->screen_heigh / 2;
-    int pitch    = App->Player.pitch_view;
-
-    glBegin(GL_QUADS);
-    glColor3f(.0, .0, .0);
-    glVertex2i(0, 0);
-    glVertex2i(App->screen_width, 0);
-    glVertex2i(App->screen_width, center_h + pitch);
-    glVertex2i(0, center_h + pitch);
-
-    glColor3f(.4, .4, .4);
-    glVertex2i(0, center_h - pitch);
-    glVertex2i(App->screen_width, center_h - pitch);
-    glVertex2i(App->screen_width, App->screen_heigh);
-    glVertex2i(0, App->screen_heigh);
-    glEnd();
+void draw_3d_view_floor(AppGame *App) {
+    float       floor_start = App->screen_height / 2 - App->Player.pitch_view;
+    Rectangle_t floor{0, floor_start, (float)App->screen_width, (float)App->screen_height + App->Player.pitch_view};
+    draw_rect(floor, DARKGRAY);
 }
 
 void draw_imgui(AppGame *App) {
@@ -403,7 +317,7 @@ void draw_imgui(AppGame *App) {
 }
 
 void draw(AppGame *App) {
-    draw_3d_view_flor_and_ceil(App);
+    draw_3d_view_floor(App);
     draw_3d_view_port(App);
     draw_aim(App);
     draw_imgui(App);

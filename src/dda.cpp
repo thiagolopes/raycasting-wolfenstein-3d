@@ -1,4 +1,3 @@
-#include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 
 // structs
@@ -8,26 +7,25 @@ typedef struct {
     glm::fvec2 collision_point;      // ponto da collision
     int        grid_index_collision; // index do grid da collision
     side_t     side;                 // qual lado do grid foi a collision
-} DDA_ray_collision;
+} DDA_t;
 
 // declarations
-bool              check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y);
-DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_direction,
-                      glm::fvec2 point_start);
+bool  check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y);
+DDA_t DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_direction, glm::fvec2 point_start);
 // main
-DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_direction,
-                      glm::fvec2 point_start) {
-    DDA_ray_collision dda_return;
-    float             ray_total_max = 1000.0;
-    float             ray_total     = 0.0;
-    bool              ray_bound     = false;
+DDA_t DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_direction, glm::fvec2 point_start) {
+    DDA_t dda_return;
+    float ray_total_max = 1000.0;
+    float ray_total     = 0.0;
+    bool  ray_bound     = false;
 
     glm::fvec2 delta(point_direction.x / map_height - point_start.x / map_height,
                      point_direction.y / map_height - point_start.y / map_height);
     glm::fvec2 unitary_vector(delta.x / glm::length(delta), delta.y / glm::length(delta));
     glm::fvec2 unitary_step_size(sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
                                  sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2)));
-    glm::fvec2 ray_length_1D, step;
+    glm::fvec2 ray_length_1D;
+    glm::fvec2 step;
     glm::ivec2 tile_map_check(point_start.x, point_start.y);
     glm::ivec2 absolute_map_tile;
 
@@ -67,10 +65,11 @@ DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fv
         /* check in the map if has a wall */
         absolute_map_tile.x = tile_map_check.x / map_height;
         absolute_map_tile.y = tile_map_check.y / map_height;
-        if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, map_len, map_len) == true
-            && map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
-            ray_bound                       = true;
-            dda_return.grid_index_collision = map_tile[absolute_map_tile.y][absolute_map_tile.x];
+        if (check_map_bound_index(absolute_map_tile.x, absolute_map_tile.y, map_len, map_len)) {
+            if (map_tile[absolute_map_tile.y][absolute_map_tile.x] != 0) {
+                ray_bound                       = true;
+                dda_return.grid_index_collision = map_tile[absolute_map_tile.y][absolute_map_tile.x];
+            }
         }
     }
 
@@ -87,8 +86,7 @@ DDA_ray_collision DDA(int map_tile[24][24], int map_height, int map_len, glm::fv
 bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y) {
     if (index_x >= 0 && index_x < index_max_x && index_y >= 0 && index_y < index_max_y)
         return true;
-    else
-        return false;
+    return false;
 }
 
 //           ────────────────────────────────x─────────────────────────────────
@@ -113,4 +111,12 @@ bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_
 //                                        └─────┘
 float fix_eye_fish(glm::fvec2 ray, float angle) {
     return glm::length(ray) * cosf(angle);
+}
+
+float normalize_rand(float rand) {
+    if (rand > PI2)
+        return rand - PI2;
+    if (rand < 0)
+        return rand + PI2;
+    return rand;
 }
