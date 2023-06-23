@@ -47,6 +47,7 @@ typedef struct {
     /* engine */
     unsigned int *texture;
     ButtonKeys    Buttons;
+    int           fps = 60;
 } AppGame;
 
 int          TEXTURE_LEN = 8;

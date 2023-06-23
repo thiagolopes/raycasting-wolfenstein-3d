@@ -5,6 +5,7 @@ typedef struct {
     glm::fvec2 collision_point;
     int        grid_index_collision;
     side_t     side;
+    bool       valid = false;
 } DDA_t;
 
 bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y) {
@@ -107,6 +108,7 @@ DDA_t DDA(int map_tile[24][24], int map_height, int map_len, glm::fvec2 point_di
     if (ray_bound == true) {
         dda_return.collision_point.x = point_start.x + unitary_vector.x * ray_total;
         dda_return.collision_point.y = point_start.y + unitary_vector.y * ray_total;
+        dda_return.valid             = true;
     } else {
         dda_return.collision_point.x = 0;
         dda_return.collision_point.y = 0;

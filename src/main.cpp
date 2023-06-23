@@ -8,7 +8,7 @@
 #include <SDL2/SDL_opengl.h>
 #include <math.h>
 #include <time.h>
-#include <iostream>
+#include <sstream>
 #include <string>
 
 // internal
@@ -28,9 +28,9 @@
 
 // methods
 void update_player(AppGame *App) {
-    float magntude = 1;
+    float magntude = 2;
     if (App->Buttons.shift == 1)
-        magntude = 2;
+        magntude = 4;
 
     /* FIX TO USE THE RELATIVE X/Y REF BASED ON THE PLAYER VIEW */
     if (App->Buttons.d == 1) {
@@ -276,8 +276,7 @@ void draw_3d_view_port(AppGame *App) {
 
         ray_collision = DDA(map, wall_height, map_len, point_end, point_start);
 
-        // avoid infinty ray
-        if (ray_collision.collision_point.x != 0 && ray_collision.collision_point.y != 0) {
+        if (ray_collision.valid) {
             distance = fix_eye_fish(point_start - ray_collision.collision_point, player_angle - angle);
 
             line_h     = (wall_height * draw_screen_h) / distance;
@@ -358,8 +357,10 @@ void engine_SDL_OpenGL_load_textures(AppGame *App) {
 // main
 int main(int argc, char *args[]) {
     srand(time(nullptr));
-    AppGame App = {1920, 1080, "Simple Wolfenstein Engine", 1, 0, {300, 300, 0, cos(PI2), -sin(PI2), 0, 70}, 24,
-                   24,   32};
+    std::string       title_format = "Simple Wolfenstein Engine - FPS %i";
+    char              title[256];
+    std::stringstream title_ss;
+    AppGame           App = {1920, 1080, title, 1, 0, {300, 300, 0, cos(PI2), -sin(PI2), 0, 70}, 24, 24, 32};
     for (int x = 0; x < App.map_cols; x++)
         for (int y = 0; y < App.map_rows; y++)
             App.map_tile[x][y] = map[x][y];
@@ -367,7 +368,21 @@ int main(int argc, char *args[]) {
     engine_SDL_OpenGL_setup(&App);
     engine_SDL_OpenGL_load_textures(&App);
 
+    const double freq_ms       = SDL_GetPerformanceFrequency();
+    Uint64       last_time     = SDL_GetPerformanceCounter();
+    unsigned int frame_counter = 0;
+    double       frame_timer   = last_time;
+    const double frame_delta   = 1000.0 / App.fps;
     while (App.run_status) {
+        Uint64 current_time = SDL_GetPerformanceCounter();
+        double delta        = (current_time - last_time) / freq_ms * 1000.0;
+        if (current_time > frame_timer + freq_ms) {
+            std::sprintf(title, title_format.c_str(), frame_counter);
+            SDL_SetWindowTitle(sdl_window, title);
+            frame_counter = 0;
+            frame_timer   = current_time;
+        }
+
         SDL_Event event;
         while (SDL_PollEvent(&event) != 0) {
             ImGui_ImplSDL2_ProcessEvent(&event);
@@ -393,19 +408,24 @@ int main(int argc, char *args[]) {
             }
         }
 
-        /* clear screen */
-        glClearColor(.0f, .0f, .0f, .0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if (delta > frame_delta) {
+            /* clear screen */
+            glClearColor(.0f, .0f, .0f, .0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /* update here */
-        update(&App);
+            /* update here */
+            update(&App);
 
-        /* draw here */
-        draw(&App);
+            /* draw here */
+            draw(&App);
 
-        /* update screen */
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        SDL_GL_SwapWindow(sdl_window);
+            /* update screen */
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            SDL_GL_SwapWindow(sdl_window);
+
+            last_time = current_time;
+            ++frame_counter;
+        }
     }
 
     /* shutdown */
