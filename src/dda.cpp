@@ -114,6 +114,6 @@ bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_
 //                                        │     │
 //                                        │     │
 //                                        └─────┘
-float fix_eye_fish(glm::fvec2 point_start, glm::fvec2 collision_point, float angle) {
-    return glm::length(point_start - collision_point) * cosf(angle);
+float fix_eye_fish(glm::fvec2 ray, float angle) {
+    return glm::length(ray) * cosf(angle);
 }

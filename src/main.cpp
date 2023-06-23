@@ -352,7 +352,7 @@ void draw_3d_view_port(AppGame *App) {
         DDA_ray_collision ray_collision = DDA(App->map_tile, App->map_height, App->map_cols, point_end, point_start);
 
         if (ray_collision.collision_point.x != 0 && ray_collision.collision_point.y != 0) {
-            float distance = fix_eye_fish(point_start, ray_collision.collision_point, (App->Player.angle - angle));
+            float distance = fix_eye_fish(point_start - ray_collision.collision_point, App->Player.angle - angle);
 
             int line_h     = (App->map_height * draw_screen_h) / distance;
             int line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
