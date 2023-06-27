@@ -259,6 +259,8 @@ void draw_3d_view_port(AppGame *App) {
     float pixel_in_rad = fov_in_rad / pixels_cols;
 
     glm::fvec2 point_start = glm::fvec2(App->Player.x, App->Player.y);
+    Color_t    draw_color;
+    float      fade_draw_vertical = 1.5;
 
     for (int pixel = 0; pixel < pixels_cols; pixel++) {
         int        line_h;
@@ -284,12 +286,19 @@ void draw_3d_view_port(AppGame *App) {
             line_end   = line_start + line_h;
 
             if (ray_collision.side == HORIZONTAL) {
+                draw_color.r   = 255;
+                draw_color.g   = 255;
+                draw_color.b   = 255;
                 texture_offset = float(int(ray_collision.collision_point.x) % wall_height) / wall_height;
             } else {
+                draw_color.r   = 255 / fade_draw_vertical;
+                draw_color.g   = 255 / fade_draw_vertical;
+                draw_color.b   = 255 / fade_draw_vertical;
                 texture_offset = float(int(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
 
-            draw_vertical_line(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset, WHITE);
+            draw_vertical_line(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset,
+                               draw_color);
         }
     }
 }
