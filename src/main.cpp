@@ -10,6 +10,7 @@
 #include <time.h>
 #include <sstream>
 #include <string>
+#include <dirent.h>
 
 // internal
 #include "main.h"
@@ -350,20 +351,37 @@ void handle_mouse_motion(AppGame *App, SDL_Event *event) {
 }
 
 void engine_SDL_OpenGL_load_textures(AppGame *App) {
-    App->texture_len = 32;
-    App->texture     = (unsigned int *)malloc(sizeof(unsigned int) * App->texture_len);
+    char texture_dir[100] = "./textures/";
+    // setup texture memory
+    App->texture_len = 0;
 
+    DIR           *textures_dirs;
+    struct dirent *ent;
+    if ((textures_dirs = opendir(texture_dir)) != nullptr) {
+        while ((ent = readdir(textures_dirs)) != nullptr) {
+            App->texture_len += 1;
+        }
+    } else {
+        // error
+    }
+
+    App->texture = (unsigned int *)malloc(sizeof(unsigned int) * App->texture_len);
     glGenTextures(App->texture_len, App->texture);
 
-    load_textures(App->texture[0], "./textures/BRICK_1A.png");
-    load_textures(App->texture[1], "./textures/BRICK_1B.png");
-    load_textures(App->texture[2], "./textures/BRICK_2A.png");
-    load_textures(App->texture[3], "./textures/BRICK_2B.png");
-    load_textures(App->texture[4], "./textures/BRICK_3A.png");
-    load_textures(App->texture[5], "./textures/BRICK_3B.png");
-    load_textures(App->texture[6], "./textures/BRICK_3C.png");
-    load_textures(App->texture[7], "./textures/BRICK_3D.png");
-    load_textures(App->texture[8], "./textures/BRICK_3E.png");
+    // load texture
+    char dir_cat[100];
+    seekdir(textures_dirs, 0);
+    for (int i = (App->texture_len - 1); i >= 0; i--) {
+        ent = readdir(textures_dirs);
+        if (strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
+            strcpy(dir_cat, "");
+            strcpy(dir_cat, texture_dir);
+            strcat(dir_cat, ent->d_name);
+            printf("%s\n", dir_cat);
+            load_textures(App->texture[i], dir_cat);
+        }
+    }
+    closedir(textures_dirs);
 }
 
 // main
