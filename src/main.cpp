@@ -11,12 +11,12 @@
 #include <sstream>
 #include <string>
 #include <dirent.h>
+#include <GL/gl.h>
 
 // internal
 #include "main.h"
 #include "colors.h"
 #include "dda.cpp"
-#include "draw.cpp"
 
 // imgui
 #include "imgui/backends/imgui_impl_opengl3.h"
@@ -26,6 +26,33 @@
 // stb
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+void draw_rect(Rectangle rect, Color_t color) {
+    glBegin(GL_QUADS);
+    glColor4ub(color.r, color.g, color.b, color.a);
+    glVertex2i(rect.x, rect.y);
+    glVertex2i(rect.x + rect.width, rect.y);
+    glVertex2i(rect.x + rect.width, rect.y + rect.height);
+    glVertex2i(rect.x, rect.y + rect.height);
+    glEnd();
+}
+void draw_vertical_line(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color_t color) {
+    glColor4ub(color.r, color.g, color.b, color.a);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    glBegin(GL_LINES);
+
+    glTexCoord2d(texture_offset, 1.0);
+    glVertex2i(posX, posY);
+
+    glTexCoord2d(texture_offset, 0.0);
+    glVertex2i(posX, posY_end);
+
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
 
 // methods
 void update_player(AppGame *App) {
@@ -157,10 +184,12 @@ void engine_SDL_OpenGL_setup(AppGame *App) {
     ImGui_ImplOpenGL3_Init("#version 130");
 }
 
-void engine_SDL_OpenGL_shutdown() {
+void engine_SDL_OpenGL_shutdown(AppGame *App) {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+
+    free(App->texture);
 
     SDL_VideoQuit();
     SDL_GL_DeleteContext(sdl_gl_context);
@@ -460,6 +489,6 @@ int main(int argc, char *args[]) {
 
     /* shutdown */
 
-    engine_SDL_OpenGL_shutdown();
+    engine_SDL_OpenGL_shutdown(&App);
     return 0;
 }
