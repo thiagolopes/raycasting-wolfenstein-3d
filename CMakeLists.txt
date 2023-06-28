@@ -17,13 +17,13 @@ find_package(glm REQUIRED)
 
 # Source Files
 add_executable(${BUILD_NAME}
-        src/imgui/imgui.cpp
-        src/imgui/imgui_demo.cpp
-        src/imgui/imgui_draw.cpp
-        src/imgui/imgui_tables.cpp
-        src/imgui/imgui_widgets.cpp
-        src/imgui/backends/imgui_impl_sdl2.cpp
-        src/imgui/backends/imgui_impl_opengl3.cpp
+        src/external/imgui/imgui.cpp
+        src/external/imgui/imgui_demo.cpp
+        src/external/imgui/imgui_draw.cpp
+        src/external/imgui/imgui_tables.cpp
+        src/external/imgui/imgui_widgets.cpp
+        src/external/imgui/backends/imgui_impl_sdl2.cpp
+        src/external/imgui/backends/imgui_impl_opengl3.cpp
         src/main.cpp)
 
 
@@ -33,8 +33,8 @@ target_include_directories(${BUILD_NAME} PRIVATE
         ${OPENGL_INCLUDE_DIR}
         ${GLUT_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/imgui
-        ${CMAKE_SOURCE_DIR}/src/imgui/backends)
+        ${CMAKE_SOURCE_DIR}/src/external/imgui
+        ${CMAKE_SOURCE_DIR}/src/external/imgui/backends)
 
 # Compiler Options
 target_compile_options(${BUILD_NAME} PRIVATE

@@ -19,13 +19,13 @@
 #include "dda.cpp"
 
 // imgui
-#include "imgui/backends/imgui_impl_opengl3.h"
-#include "imgui/backends/imgui_impl_sdl2.h"
-#include "imgui/imgui.h"
+#include "external/imgui/backends/imgui_impl_opengl3.h"
+#include "external/imgui/backends/imgui_impl_sdl2.h"
+#include "external/imgui/imgui.h"
 
 // stb
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "external/stb_image.h"
 
 void draw_rect(Rectangle rect, Color_t color) {
     glBegin(GL_QUADS);
