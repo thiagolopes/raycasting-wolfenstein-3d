@@ -225,7 +225,7 @@ void load_textures(unsigned int texture, std::string texture_name) {
     stbi_set_flip_vertically_on_load(1);
 
     int            f_width, f_height, bpp;
-    unsigned char *data = stbi_load(texture_name.c_str(), &f_width, &f_height, &bpp, 0);
+    unsigned char *data = stbi_load(texture_name.c_str(), &f_width, &f_height, &bpp, STBI_rgb_alpha);
     if (!data) {
         SDL_Log("load data error");
     }
@@ -350,17 +350,20 @@ void handle_mouse_motion(AppGame *App, SDL_Event *event) {
 }
 
 void engine_SDL_OpenGL_load_textures(AppGame *App) {
-    glGenTextures(TEXTURE_LEN, TEXTURE);
+    App->texture_len = 32;
+    App->texture     = (unsigned int *)malloc(sizeof(unsigned int) * App->texture_len);
 
-    load_textures(TEXTURE[0], "./textures/eagle.png");
-    load_textures(TEXTURE[1], "./textures/redbrick.png");
-    load_textures(TEXTURE[2], "./textures/purplestone.png");
-    load_textures(TEXTURE[3], "./textures/greystone.png");
-    load_textures(TEXTURE[4], "./textures/bluestone.png");
-    load_textures(TEXTURE[5], "./textures/mossy.png");
-    load_textures(TEXTURE[6], "./textures/wood.png");
-    load_textures(TEXTURE[7], "./textures/colorstone.png");
-    App->texture = TEXTURE;
+    glGenTextures(App->texture_len, App->texture);
+
+    load_textures(App->texture[0], "./textures/BRICK_1A.png");
+    load_textures(App->texture[1], "./textures/BRICK_1B.png");
+    load_textures(App->texture[2], "./textures/BRICK_2A.png");
+    load_textures(App->texture[3], "./textures/BRICK_2B.png");
+    load_textures(App->texture[4], "./textures/BRICK_3A.png");
+    load_textures(App->texture[5], "./textures/BRICK_3B.png");
+    load_textures(App->texture[6], "./textures/BRICK_3C.png");
+    load_textures(App->texture[7], "./textures/BRICK_3D.png");
+    load_textures(App->texture[8], "./textures/BRICK_3E.png");
 }
 
 // main
