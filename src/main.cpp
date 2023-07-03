@@ -189,8 +189,6 @@ void engine_SDL_OpenGL_shutdown(AppGame *App) {
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    free(App->texture);
-
     SDL_VideoQuit();
     SDL_GL_DeleteContext(sdl_gl_context);
     SDL_DestroyWindow(sdl_window);
@@ -411,6 +409,7 @@ void engine_SDL_OpenGL_load_textures(AppGame *App) {
         }
     }
     closedir(textures_dirs);
+    free(App->texture);
 }
 
 // main
