@@ -24,7 +24,7 @@ add_executable(${BUILD_NAME}
         src/external/imgui/imgui_widgets.cpp
         src/external/imgui/backends/imgui_impl_sdl2.cpp
         src/external/imgui/backends/imgui_impl_opengl3.cpp
-        src/main.cpp)
+        src/main.c)
 
 
 # Include Directories
@@ -78,5 +78,6 @@ target_link_libraries(${BUILD_NAME} OpenGL::GL SDL2::SDL2 GLEW::GLEW m)
 
 #lint
 add_custom_target(lint
-    COMMAND clang-format --style=file src/*.cpp src/*.h  -i
+    COMMAND clang-format --style=file src/*.c src/*.h  -i
+ src/*.h  -i
 )

@@ -3,11 +3,11 @@
 #define ONE_RAD 0.0174533
 
 typedef struct Color {
-    unsigned char r;       // Color red value
-    unsigned char g;       // Color green value
-    unsigned char b;       // Color blue value
-    unsigned char a = 255; // Color alpha value
-} Color_t;
+    unsigned char r; // Color red value
+    unsigned char g; // Color green value
+    unsigned char b; // Color blue value
+    unsigned char a; // Color alpha value
+} Color;
 
 typedef struct Rectangle {
     float x;      // Rectangle top-left corner position x
@@ -15,16 +15,6 @@ typedef struct Rectangle {
     float width;  // Rectangle width
     float height; // Rectangle height
 } Rectangle_t;
-
-typedef struct Point2f {
-    float x;
-    float y;
-} Point2f_t;
-
-typedef struct Point2i {
-    int x;
-    int y;
-} Point2i_t;
 
 typedef struct {
     int a, w, s, d, shift, ctrl, j, k;
@@ -58,7 +48,7 @@ typedef struct {
     unsigned int *texture;
     unsigned int  texture_len;
     ButtonKeys    Buttons;
-    int           fps = 60;
+    int           fps;
 } AppGame;
 
 int map[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6, 4},
