@@ -30,6 +30,11 @@ Point2f sub(Point2f a, Point2f b) {
 
 #define PI 3.141592
 #define TAU 6.283185
+#define ONE_RAD 0.0174533
+
+float degree_to_rad(float degree) {
+    return degree * ONE_RAD;
+}
 
 typedef enum { VERTICAL, HORIZONTAL } side_t;
 

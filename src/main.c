@@ -263,8 +263,8 @@ void draw_3d_view_port(AppGame *App) {
     int(*map)[24]      = App->map_tile;
     int   pitch        = App->Player.pitch_view; /* player look up or down */
     float player_angle = App->Player.angle;
-    float fov_in_rad   = App->Player.fov * ONE_RAD;
-    float hfov_in_rad  = (App->Player.fov / 2) * ONE_RAD;
+    float fov_in_rad   = degree_to_rad(App->Player.fov);
+    float hfov_in_rad  = degree_to_rad(App->Player.fov / 2);
     float pixel_in_rad = fov_in_rad / pixels_cols;
 
     Point2f point_start = {App->Player.x, App->Player.y};
@@ -338,8 +338,7 @@ void handle_mouse_motion(AppGame *App, SDL_Event *event) {
     switch (event->type) {
         case SDL_MOUSEMOTION:
             App->Player.pitch_view += (event->motion.yrel * 3);
-
-            App->Player.angle += (ONE_RAD / 6) * event->motion.xrel;
+            App->Player.angle += MOUSE_VELOCITY * event->motion.xrel;
             App->Player.direction_x = cos(App->Player.angle);
             App->Player.direction_y = -sin(App->Player.angle);
             break;
@@ -385,10 +384,9 @@ void engine_SDL_OpenGL_load_textures(AppGame *App) {
 int main(int argc, char *args[]) {
     srand(time(NULL));
     char    title_format[] = "Simple Wolfenstein Engine - FPS %i";
-    char    title[256];
-    char   *title_ss;
-    AppGame App = {1920, 1080, title, 1, 0, {300, 300, 0, cos(TAU), -sin(TAU), 0, 70}, 24, 24, 32};
-    App.fps     = 60;
+    char    title[256]     = "Simple Wolfenstein Engine";
+    AppGame App            = {1920, 1080, title, 1, 0, {300, 300, 0, cos(TAU), -sin(TAU), 0, 70}, 24, 24, 32};
+    App.fps                = 60;
     for (int x = 0; x < App.map_cols; x++)
         for (int y = 0; y < App.map_rows; y++)
             App.map_tile[x][y] = map[x][y];

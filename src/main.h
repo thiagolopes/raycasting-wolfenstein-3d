@@ -1,6 +1,4 @@
-#define PI 3.141592
-#define TAU 6.283185
-#define ONE_RAD 0.0174533
+#define MOUSE_VELOCITY 0.002909
 
 typedef struct Color {
     unsigned char r; // Color red value
