@@ -17,13 +17,6 @@ find_package(glm REQUIRED)
 
 # Source Files
 add_executable(${BUILD_NAME}
-        src/external/imgui/imgui.cpp
-        src/external/imgui/imgui_demo.cpp
-        src/external/imgui/imgui_draw.cpp
-        src/external/imgui/imgui_tables.cpp
-        src/external/imgui/imgui_widgets.cpp
-        src/external/imgui/backends/imgui_impl_sdl2.cpp
-        src/external/imgui/backends/imgui_impl_opengl3.cpp
         src/main.c)
 
 
@@ -32,9 +25,7 @@ target_include_directories(${BUILD_NAME} PRIVATE
         ${SDL2_INCLUDE_DIRS}
         ${OPENGL_INCLUDE_DIR}
         ${GLUT_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/external/imgui
-        ${CMAKE_SOURCE_DIR}/src/external/imgui/backends)
+        ${CMAKE_SOURCE_DIR}/src)
 
 # Compiler Options
 target_compile_options(${BUILD_NAME} PRIVATE
@@ -60,21 +51,9 @@ target_compile_options(${BUILD_NAME} PRIVATE
         -pg
         -g)
 
-
-
 # Link Libraries
 target_link_libraries(${BUILD_NAME} Threads::Threads)
 target_link_libraries(${BUILD_NAME} OpenGL::GL SDL2::SDL2 GLEW::GLEW m)
-
-
-# file(GLOB SOURCES
-#   "src/*.c"
-#   "src/*.cpp"
-# )
-# add_executable(game ${SOURCES})
-
-# Libs
-# target_link_libraries(game OpenGL::GL SDL2::SDL2 GLEW::GLEW m SDL2_image)
 
 #lint
 add_custom_target(lint
