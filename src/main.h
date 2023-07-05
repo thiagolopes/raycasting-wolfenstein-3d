@@ -1,5 +1,5 @@
 #define PI 3.141592
-#define PI2 6.283185
+#define TAU 6.283185
 #define ONE_RAD 0.0174533
 
 typedef struct Color {
@@ -16,6 +16,16 @@ typedef struct Rectangle {
     float height; // Rectangle height
 } Rectangle_t;
 
+typedef struct Point2f {
+    float x;
+    float y;
+} Point2f_t;
+
+typedef struct Point2i {
+    int x;
+    int y;
+} Point2i_t;
+
 typedef struct {
     int a, w, s, d, shift, ctrl, j, k;
 } ButtonKeys;
@@ -31,12 +41,12 @@ typedef struct {
 } Player_t;
 
 typedef struct {
-    int         screen_width;
-    int         screen_height;
-    std::string window_name;
-    int         run_status;
-    int         window_fullcreen;
-    Player_t    Player;
+    int      screen_width;
+    int      screen_height;
+    char    *window_name;
+    int      run_status;
+    int      window_fullcreen;
+    Player_t Player;
 
     /* move to map */
     int map_cols;
@@ -76,5 +86,5 @@ int map[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 
                    {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
                    {2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5}};
 
-SDL_Window   *sdl_window = nullptr;
+SDL_Window   *sdl_window = NULL;
 SDL_GLContext sdl_gl_context;

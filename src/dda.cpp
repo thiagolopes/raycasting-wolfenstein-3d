@@ -1,5 +1,8 @@
 #include <glm/glm.hpp>
 
+#define PI 3.141592
+#define TAU 6.283185
+
 typedef enum { VERTICAL, HORIZONTAL } side_t;
 typedef struct {
     glm::fvec2 collision_point;
@@ -38,10 +41,10 @@ float fix_eye_fish(glm::fvec2 ray, float angle) {
 }
 
 float normalize_rand(float rand) {
-    if (rand > PI2)
-        return rand - PI2;
+    if (rand > TAU)
+        return rand - TAU;
     if (rand < 0)
-        return rand + PI2;
+        return rand + TAU;
     return rand;
 }
 

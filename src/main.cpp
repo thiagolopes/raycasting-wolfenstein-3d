@@ -19,9 +19,9 @@
 #include "dda.cpp"
 
 // imgui
-#include "external/imgui/backends/imgui_impl_opengl3.h"
-#include "external/imgui/backends/imgui_impl_sdl2.h"
-#include "external/imgui/imgui.h"
+// #include "external/imgui/backends/imgui_impl_opengl3.h"
+// #include "external/imgui/backends/imgui_impl_sdl2.h"
+// #include "external/imgui/imgui.h"
 
 // stb
 #define STB_IMAGE_IMPLEMENTATION
@@ -138,8 +138,8 @@ void engine_SDL_OpenGL_setup(AppGame *App) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-    sdl_window = SDL_CreateWindow(App->window_name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                  App->screen_width, App->screen_height, SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
+    sdl_window = SDL_CreateWindow(App->window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, App->screen_width,
+                                  App->screen_height, SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
     if (sdl_window == nullptr) {
         perror(SDL_GetError());
     }
@@ -169,26 +169,9 @@ void engine_SDL_OpenGL_setup(AppGame *App) {
     SDL_CaptureMouse(SDL_TRUE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
-
-    // imgui
-    const unsigned char *glsl   = glGetString(GL_SHADING_LANGUAGE_VERSION);
-    std::string          glsl_s = std::to_string(*glsl);
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Contro
-    ImGui::StyleColorsDark();
-    ImGui_ImplSDL2_InitForOpenGL(sdl_window, sdl_gl_context);
-    ImGui_ImplOpenGL3_Init("#version 130");
 }
 
 void engine_SDL_OpenGL_shutdown(AppGame *App) {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
-
     SDL_VideoQuit();
     SDL_GL_DeleteContext(sdl_gl_context);
     SDL_DestroyWindow(sdl_window);
@@ -249,11 +232,11 @@ void handle_mouse_pressed_up(int button, float x, float y, AppGame *App) {
     }
 }
 
-void load_textures(unsigned int texture, std::string texture_name) {
+void load_textures(unsigned int texture, char *texture_name) {
     stbi_set_flip_vertically_on_load(1);
 
     int            f_width, f_height, bpp;
-    unsigned char *data = stbi_load(texture_name.c_str(), &f_width, &f_height, &bpp, STBI_rgb_alpha);
+    unsigned char *data = stbi_load(texture_name, &f_width, &f_height, &bpp, STBI_rgb_alpha);
     if (!data) {
         SDL_Log("load data error");
     }
@@ -337,23 +320,10 @@ void draw_3d_view_floor(AppGame *App) {
     draw_rect(floor, DARKGRAY);
 }
 
-void draw_imgui(AppGame *App) {
-    bool show_demo = false;
-    // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-
-    ImGui::NewFrame();
-    if (show_demo)
-        ImGui::ShowDemoWindow();
-    ImGui::Render();
-}
-
 void draw(AppGame *App) {
     draw_3d_view_floor(App);
     draw_3d_view_port(App);
     draw_aim(App);
-    draw_imgui(App);
 }
 
 void handle_mouse_motion(AppGame *App, SDL_Event *event) {
@@ -415,10 +385,10 @@ void engine_SDL_OpenGL_load_textures(AppGame *App) {
 // main
 int main(int argc, char *args[]) {
     srand(time(nullptr));
-    std::string       title_format = "Simple Wolfenstein Engine - FPS %i";
-    char              title[256];
-    std::stringstream title_ss;
-    AppGame           App = {1920, 1080, title, 1, 0, {300, 300, 0, cos(PI2), -sin(PI2), 0, 70}, 24, 24, 32};
+    char    title_format[] = "Simple Wolfenstein Engine - FPS %i";
+    char    title[256];
+    char   *title_ss;
+    AppGame App = {1920, 1080, title, 1, 0, {300, 300, 0, cos(TAU), -sin(TAU), 0, 70}, 24, 24, 32};
     for (int x = 0; x < App.map_cols; x++)
         for (int y = 0; y < App.map_rows; y++)
             App.map_tile[x][y] = map[x][y];
@@ -435,7 +405,7 @@ int main(int argc, char *args[]) {
         Uint64 current_time = SDL_GetPerformanceCounter();
         double delta        = (current_time - last_time) / freq_ms * 1000.0;
         if (current_time > frame_timer + freq_ms) {
-            std::sprintf(title, title_format.c_str(), frame_counter);
+            std::sprintf(title, title_format, frame_counter);
             SDL_SetWindowTitle(sdl_window, title);
             frame_counter = 0;
             frame_timer   = current_time;
@@ -443,7 +413,6 @@ int main(int argc, char *args[]) {
 
         SDL_Event event;
         while (SDL_PollEvent(&event) != 0) {
-            ImGui_ImplSDL2_ProcessEvent(&event);
             switch (event.type) {
                 case SDL_QUIT:
                     App.run_status = 0;
@@ -478,7 +447,6 @@ int main(int argc, char *args[]) {
             draw(&App);
 
             /* update screen */
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             SDL_GL_SwapWindow(sdl_window);
 
             last_time = current_time;
@@ -487,7 +455,6 @@ int main(int argc, char *args[]) {
     }
 
     /* shutdown */
-
     engine_SDL_OpenGL_shutdown(&App);
     return 0;
 }
