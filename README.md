@@ -1,13 +1,13 @@
-# Raycasting in C99 with OpenGL
+# Raycasting in C99 and OpenGL
 
-## v0.1 untextured
-![v1](https://user-images.githubusercontent.com/5994972/226800301-39cd9a59-c5a2-4bcb-aa6e-5e2f3c281115.gif)
+Demo: https://www.youtube.com/watch?v=c_aWcXAWfFA
 
-## v0.2 textured
-![v2](https://user-images.githubusercontent.com/5994972/235757981-641a1d44-f550-4e46-8ef5-71f14a095a12.gif)
-
-### How build
+## How build
 ```
 cmake .
 make
 ```
+
+### + demo
+![v1](https://user-images.githubusercontent.com/5994972/226800301-39cd9a59-c5a2-4bcb-aa6e-5e2f3c281115.gif)
+![v2](https://user-images.githubusercontent.com/5994972/235757981-641a1d44-f550-4e46-8ef5-71f14a095a12.gif)
