@@ -6,7 +6,6 @@
 #include <SDL2/SDL_log.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_opengl.h>
-#include <math.h>
 #include <time.h>
 #include <dirent.h>
 #include <GL/gl.h>
@@ -289,7 +288,7 @@ void draw_3d_view_port(AppGame *App) {
         ray_collision = DDA(map, wall_height, map_len, point_end, point_start);
 
         if (ray_collision.valid) {
-            distance = fix_eye_fish(sub(point_start, ray_collision.collision_point), player_angle - angle);
+            distance = fix_eye_fish(point2f_sub(point_start, ray_collision.collision_point), player_angle - angle);
 
             line_h     = (wall_height * draw_screen_h) / distance;
             line_start = (draw_screen_h / 2 - line_h / 2) - pitch;

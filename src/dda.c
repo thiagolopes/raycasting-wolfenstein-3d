@@ -1,40 +1,6 @@
-#include <math.h>
 #include <stdbool.h>
-
-typedef struct Point2f {
-    float x;
-    float y;
-} Point2f;
-
-typedef struct Point2i {
-    int x;
-    int y;
-} Point2i;
-
-float length(Point2f point) {
-    return sqrt(point.x * point.x + point.y * point.y);
-}
-
-Point2f normalize(Point2f point) {
-    float   len = length(point);
-    Point2f normalized;
-    normalized.x = point.x / len;
-    normalized.y = point.y / len;
-    return normalized;
-}
-
-Point2f sub(Point2f a, Point2f b) {
-    Point2f p = {a.x - b.x, a.y - b.y};
-    return p;
-}
-
-#define PI 3.141592
-#define TAU 6.283185
-#define ONE_RAD 0.0174533
-
-float degree_to_rad(float degree) {
-    return degree * ONE_RAD;
-}
+#include "math.h"
+#include <math.h>
 
 typedef enum { VERTICAL, HORIZONTAL } side_t;
 
@@ -45,33 +11,34 @@ typedef struct {
     bool    valid;
 } DDA_t;
 
+
+// Move to map logic
 bool check_map_bound_index(int index_x, int index_y, int index_max_x, int index_max_y) {
     if (index_x >= 0 && index_x < index_max_x && index_y >= 0 && index_y < index_max_y)
         return true;
     return false;
 }
 
+/*                                                                              Wall */
+/* |─────────────────────────────────────────x─────────────────────────────────|     */
+/*                          xx  P1        P2 x                                       */
+/*        (P1)The calculated xx              x   To fix the fish eye, just           */
+/* Ray has distortions based   xx            x     calculate perpendicular ray (P2)  */
+/* with the center, due to      xx           x     P1 * cos(angle)                   */
+/* ray "casting" the screen.     xx          x                                       */
+/*                                xx         x                                       */
+/*                                 xx        x                                       */
+/*         The distortion cause     xx       x                                       */
+/*         the Fish Eye illusion     xx      x                                       */
+/*                                    xx     x                                       */
+/*                                     xx    x                                       */
+/*                                      xx   x                                       */
+/*                                       xx  x                                       */
+/*                                        xx x                                       */
+/*                                          xx          "Camera view"                */
+/*                                |──────────x──────────|                            */
 float fix_eye_fish(Point2f ray, float angle) {
-    //                                                                              Wall
-    // |─────────────────────────────────────────x─────────────────────────────────|
-    //                          xx  P1        P2 x
-    //        (P1)The calculated xx              x   To fix the fish eye, just
-    // Ray has distortions based   xx            x     calculate perpendicular ray (P2)
-    // with the center, due to      xx           x     P1 * cos(angle)
-    // ray "casting" the screen.     xx          x
-    //                                xx         x
-    //                                 xx        x
-    //         The distortion cause     xx       x
-    //         the Fish Eye illusion     xx      x
-    //                                    xx     x
-    //                                     xx    x
-    //                                      xx   x
-    //                                       xx  x
-    //                                        xx x
-    //                                          xx          "Camera view"
-    //                                |──────────x──────────|
-    //
-    return length(ray) * cosf(angle);
+    return point2f_len(ray) * cosf(angle);
 }
 
 float normalize_rand(float rand) {
@@ -82,7 +49,7 @@ float normalize_rand(float rand) {
     return rand;
 }
 
-DDA_t DDA(int map_tile[24][24], int map_height, int map_len, Point2f point_direction, Point2f point_start) {
+DDA_t DDA(int map_tile[24][24], int map_height, int map_len, Point2f direction, Point2f start) {
     DDA_t dda_return;
     dda_return.side                 = 0;
     dda_return.grid_index_collision = -1;
@@ -90,33 +57,33 @@ DDA_t DDA(int map_tile[24][24], int map_height, int map_len, Point2f point_direc
     float ray_total                 = 0.0;
     bool  ray_bound                 = false;
 
-    Point2f delta             = {point_direction.x / map_height - point_start.x / map_height,
-                                 point_direction.y / map_height - point_start.y / map_height};
-    Point2f unitary_vector    = normalize(delta);
+    Point2f delta = {direction.x / map_height - start.x / map_height,
+                     direction.y / map_height - start.y / map_height};
+    Point2f unitary_vector = point2f_normalize(delta);
     Point2f unitary_step_size = {sqrtf(1 + powf(unitary_vector.y / unitary_vector.x, 2)),
                                  sqrtf(1 + powf(unitary_vector.x / unitary_vector.y, 2))};
     Point2f ray_length_1D;
     Point2f step;
-    Point2i tile_map_check = {(int)point_start.x, (int)point_start.y};
+    Point2i tile_map_check = {(int)start.x, (int)start.y};
     Point2i absolute_map_tile;
 
     // set the initial ray direction y or x
     /* set walk to x */
     if (unitary_vector.x < 0) {
         step.x          = -1;
-        ray_length_1D.x = (point_start.x - tile_map_check.x) * unitary_step_size.x;
+        ray_length_1D.x = (start.x - tile_map_check.x) * unitary_step_size.x;
     } else {
         step.x          = 1;
-        ray_length_1D.x = ((tile_map_check.x + 1) - point_start.x) * unitary_step_size.x;
+        ray_length_1D.x = ((tile_map_check.x + 1) - start.x) * unitary_step_size.x;
     }
 
     /* set walk to y */
     if (unitary_vector.y < 0) {
         step.y          = -1;
-        ray_length_1D.y = (point_start.y - tile_map_check.y) * unitary_step_size.y;
+        ray_length_1D.y = (start.y - tile_map_check.y) * unitary_step_size.y;
     } else {
         step.y          = 1;
-        ray_length_1D.y = ((tile_map_check.y + 1) - point_start.y) * unitary_step_size.y;
+        ray_length_1D.y = ((tile_map_check.y + 1) - start.y) * unitary_step_size.y;
     }
 
     /* start walk until collision or max */
@@ -145,8 +112,8 @@ DDA_t DDA(int map_tile[24][24], int map_height, int map_len, Point2f point_direc
     }
 
     if (ray_bound == true) {
-        dda_return.collision_point.x = point_start.x + unitary_vector.x * ray_total;
-        dda_return.collision_point.y = point_start.y + unitary_vector.y * ray_total;
+        dda_return.collision_point.x = start.x + unitary_vector.x * ray_total;
+        dda_return.collision_point.y = start.y + unitary_vector.y * ray_total;
         dda_return.valid             = true;
     } else {
         dda_return.collision_point.x = 0;
