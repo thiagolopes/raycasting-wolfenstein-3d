@@ -27,33 +27,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb_image.h"
 
-void draw_rect(Rectanglef rect, Color color) {
-    glBegin(GL_QUADS);
-    glColor4ub(color.r, color.g, color.b, color.a);
-    glVertex2i(rect.x, rect.y);
-    glVertex2i(rect.x + rect.width, rect.y);
-    glVertex2i(rect.x + rect.width, rect.y + rect.height);
-    glVertex2i(rect.x, rect.y + rect.height);
-    glEnd();
-}
-
-void draw_vertical_line(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color) {
-    glColor4ub(color.r, color.g, color.b, color.a);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-
-    glBegin(GL_LINES);
-
-    glTexCoord2d(texture_offset, 1.0);
-    glVertex2i(posX, posY);
-
-    glTexCoord2d(texture_offset, 0.0);
-    glVertex2i(posX, posY_end);
-
-    glEnd();
-
-    glDisable(GL_TEXTURE_2D);
-}
 
 // methods
 void update_player(Keys* keys, Player_t* player) {
@@ -77,10 +50,10 @@ void update_player(Keys* keys, Player_t* player) {
         player->y -= player->direction_y * magntude;
     }
     if (keys->j == 1) {
-        player->pitch_view -= 10;
+        player->fov -= 1;
     }
     if (keys->k == 1) {
-        player->pitch_view += 10;
+        player->fov += 1;
     }
     player->angle = normalize_rand(player->angle);
 }
@@ -123,16 +96,6 @@ static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_a
     }
 }
 
-
-void handle_mouse_pressed_down(int button, float x, float y, AppGame *App) {
-    switch (button) {
-        case SDL_BUTTON_LEFT:
-            break;
-        case SDL_BUTTON_RIGHT:
-            break;
-    }
-}
-
 /* TODO move to shader */
 void draw_aim(Window *window) {
     float pixel[3];
@@ -170,6 +133,15 @@ void draw_aim(Window *window) {
 }
 
 void handle_mouse_pressed_up(int button, float x, float y, AppGame *App) {
+    switch (button) {
+        case SDL_BUTTON_LEFT:
+            break;
+        case SDL_BUTTON_RIGHT:
+            break;
+    }
+}
+
+void handle_mouse_pressed_down(int button, float x, float y, AppGame *App) {
     switch (button) {
         case SDL_BUTTON_LEFT:
             break;
@@ -238,6 +210,7 @@ void draw_3d_view_port(AppGame *App, Window *win) {
 
         if (ray_collision.valid) {
             distance = fix_eye_fish(point2f_sub(point_start, ray_collision.collision_point), player_angle - angle);
+            /* distance = point2f_len(point2f_sub(point_start, ray_collision.collision_point)); */
 
             line_h     = (wall_height * draw_screen_h) / distance;
             line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
@@ -255,16 +228,16 @@ void draw_3d_view_port(AppGame *App, Window *win) {
                 texture_offset = (float)((int)(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
 
-            draw_vertical_line(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset,
-                               draw_color);
+            draw_line(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset, draw_color);
         }
     }
 }
 
 void draw_3d_view_floor(AppGame* App, Window* win) {
-    float      floor_start = win->height / 2 - App->Player.pitch_view;
-    Rectanglef floor = {0, floor_start, (float)win->width, (float)win->height + App->Player.pitch_view};
-    draw_rect(floor, DARKGRAY);
+    float floor_start = win->height / 2 - App->Player.pitch_view;
+    Rectanglef floor = {0, floor_start, (float)win->width,
+                        (float)win->height + App->Player.pitch_view};
+    draw_rectf(floor, DARKGRAY);
 }
 
 void draw(AppGame* App, Window* win) {
@@ -334,7 +307,7 @@ int main(int argc, char *args[]) {
     char    title_format[] = "Simple Wolfenstein Engine - FPS %i";
     char    title[256]     = "Simple Wolfenstein Engine";
     AppGame App            = {1, {300, 300, 0, cos(TAU), -sin(TAU), 0, 70}, 24, 24, 32};
-    App.fps                = 60;
+    App.fps                = 144;
     for (int x = 0; x < App.map_cols; x++)
         for (int y = 0; y < App.map_rows; y++)
             App.map_tile[x][y] = map[x][y];
@@ -343,7 +316,7 @@ int main(int argc, char *args[]) {
     Keys keys_map = {0};
     Mouse mouse = {0};
     window_vsync(true);
-    window_keep_mouse_on_center(true);
+    window_capture_cursor(true);
     engine_SDL_OpenGL_load_textures(&App);
 
     const double freq_ms       = SDL_GetPerformanceFrequency();
@@ -377,7 +350,6 @@ int main(int argc, char *args[]) {
                   handle_mouse_motion(&App, &event);
                     break;
                 case SDL_MOUSEBUTTONDOWN:
-
                     handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
                     break;
                 case SDL_MOUSEBUTTONUP:
