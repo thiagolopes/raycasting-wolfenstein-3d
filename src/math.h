@@ -2,6 +2,13 @@
 #define TAU 6.283185
 #define ONE_RAD 0.0174533
 
+typedef struct{
+    float x;
+    float y;
+    float width;
+    float height;
+} Rectanglef;
+
 typedef struct Point2f {
     float x;
     float y;

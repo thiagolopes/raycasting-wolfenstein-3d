@@ -1,5 +1,9 @@
+CC=gcc
+CFLAGS=-I.
+LIBS=-lm -lSDL2 -lOpenGL
+
 main:
-	 gcc src/main.c src/math.c -o raycasting -lm -lSDL2 -lOpenGL
+	 $(CC) src/main.c src/math.c src/engine.c -o raycasting $(LIBS) $(CFLAGS)
 
 run:
 	./raycasting

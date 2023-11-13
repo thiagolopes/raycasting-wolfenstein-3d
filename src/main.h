@@ -1,27 +1,5 @@
 #define MOUSE_VELOCITY 0.002909
 
-typedef struct Color {
-    unsigned char r; // Color red value
-    unsigned char g; // Color green value
-    unsigned char b; // Color blue value
-    unsigned char a; // Color alpha value
-} Color;
-
-typedef struct Rectangle {
-    float x;      // Rectangle top-left corner position x
-    float y;      // Rectangle top-left corner position y
-    float width;  // Rectangle width
-    float height; // Rectangle height
-} Rectangle_t;
-
-typedef struct {
-    int a, w, s, d, shift, ctrl, j, k;
-} ButtonKeys;
-
-typedef struct {
-    float x, y, xref, yref, button_r, button_l;
-} Mouse;
-
 typedef struct {
     float  x, y;
     double angle, direction_x, direction_y;
@@ -29,11 +7,7 @@ typedef struct {
 } Player_t;
 
 typedef struct {
-    int      screen_width;
-    int      screen_height;
-    char    *window_name;
     int      run_status;
-    int      window_fullcreen;
     Player_t Player;
 
     /* move to map */
@@ -45,7 +19,6 @@ typedef struct {
     /* engine */
     unsigned int *texture;
     unsigned int  texture_len;
-    ButtonKeys    Buttons;
     int           fps;
 } AppGame;
 
@@ -74,5 +47,3 @@ int map[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 
                    {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
                    {2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5}};
 
-SDL_Window   *sdl_window = NULL;
-SDL_GLContext sdl_gl_context;

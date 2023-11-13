@@ -6,11 +6,14 @@
 #include <SDL2/SDL_log.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_opengl.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <time.h>
 #include <dirent.h>
 #include <GL/gl.h>
 
 // internal
+#include "engine.h"
 #include "main.h"
 #include "colors.h"
 #include "dda.c"
@@ -24,7 +27,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb_image.h"
 
-void draw_rect(Rectangle_t rect, Color color) {
+void draw_rect(Rectanglef rect, Color color) {
     glBegin(GL_QUADS);
     glColor4ub(color.r, color.g, color.b, color.a);
     glVertex2i(rect.x, rect.y);
@@ -33,6 +36,7 @@ void draw_rect(Rectangle_t rect, Color color) {
     glVertex2i(rect.x, rect.y + rect.height);
     glEnd();
 }
+
 void draw_vertical_line(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color) {
     glColor4ub(color.r, color.g, color.b, color.a);
     glEnable(GL_TEXTURE_2D);
@@ -52,128 +56,73 @@ void draw_vertical_line(float posX, float posY, float posY_end, int texture_id, 
 }
 
 // methods
-void update_player(AppGame *App) {
+void update_player(Keys* keys, Player_t* player) {
     float magntude = 2;
-    if (App->Buttons.shift == 1)
+    if (keys->shift == 1)
         magntude = 4;
 
     /* FIX TO USE THE RELATIVE X/Y REF BASED ON THE PLAYER VIEW */
-    if (App->Buttons.d == 1) {
-        App->Player.y -= App->Player.direction_x * magntude;
+    if (keys->d == 1) {
+        player->y -= player->direction_x * magntude;
     }
-    if (App->Buttons.a == 1) {
-        App->Player.y += App->Player.direction_x * magntude;
+    if (keys->a == 1) {
+        player->y += player->direction_x * magntude;
     }
-    if (App->Buttons.w == 1) {
-        App->Player.x += App->Player.direction_x * magntude;
-        App->Player.y += App->Player.direction_y * magntude;
+    if (keys->w == 1) {
+        player->x += player->direction_x * magntude;
+        player->y += player->direction_y * magntude;
     }
-    if (App->Buttons.s == 1) {
-        App->Player.x -= App->Player.direction_x * magntude;
-        App->Player.y -= App->Player.direction_y * magntude;
+    if (keys->s == 1) {
+        player->x -= player->direction_x * magntude;
+        player->y -= player->direction_y * magntude;
     }
-    if (App->Buttons.j == 1) {
-        App->Player.pitch_view -= 10;
+    if (keys->j == 1) {
+        player->pitch_view -= 10;
     }
-    if (App->Buttons.k == 1) {
-        App->Player.pitch_view += 10;
+    if (keys->k == 1) {
+        player->pitch_view += 10;
     }
-    App->Player.angle = normalize_rand(App->Player.angle);
+    player->angle = normalize_rand(player->angle);
 }
 
-void update(AppGame *App) {
-    update_player(App);
+void update(AppGame *App, Keys* keys) {
+  update_player(keys, &App->Player);
 }
 
-static void handle_key(SDL_Keysym keysym, AppGame *App, int button_action) {
+static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_action) {
     switch (keysym.sym) {
         case SDLK_ESCAPE:
             App->run_status = 0;
             break;
         case SDLK_a:
-            App->Buttons.a = button_action;
+            keys->a = button_action;
             break;
         case SDLK_d:
-            App->Buttons.d = button_action;
+            keys->d = button_action;
             break;
         case SDLK_w:
-            App->Buttons.w = button_action;
+            keys->w = button_action;
             break;
         case SDLK_s:
-            App->Buttons.s = button_action;
+            keys->s = button_action;
             break;
         case SDLK_LSHIFT:
-            App->Buttons.shift = button_action;
+            keys->shift = button_action;
             break;
         case SDLK_j:
-            App->Buttons.j = button_action;
-            App->Buttons.k = 0;
+            keys->j = button_action;
+            keys->k = 0;
             break;
         case SDLK_k:
-            App->Buttons.k = button_action;
-            App->Buttons.j = 0;
+            keys->k = button_action;
+            keys->j = 0;
             break;
         case SDLK_LCTRL:
-            App->Buttons.ctrl = button_action;
+            keys->ctrl = button_action;
             break;
     }
 }
 
-void engine_SDL_OpenGL_setup(AppGame *App) {
-    int VSYNC = SDL_DISABLE;
-
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVERYTHING) < 0) {
-        perror(SDL_GetError());
-    }
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-    sdl_window = SDL_CreateWindow(App->window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, App->screen_width,
-                                  App->screen_height, SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
-    if (sdl_window == NULL) {
-        perror(SDL_GetError());
-    }
-
-    sdl_gl_context = SDL_GL_CreateContext(sdl_window);
-    if (sdl_gl_context == NULL) {
-        perror(SDL_GetError());
-    }
-
-    /* setup vsync */
-    if (SDL_GL_SetSwapInterval(VSYNC) < 0) {
-        perror(SDL_GetError());
-    }
-
-    /* init opengl view */
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, App->screen_width, App->screen_height, 0, 1, -1);
-    glMatrixMode(GL_MODELVIEW);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    if (App->window_fullcreen)
-        SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
-
-    SDL_ShowCursor(SDL_ENABLE);
-    SDL_CaptureMouse(SDL_TRUE);
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
-}
-
-void engine_SDL_OpenGL_shutdown(AppGame *App) {
-    SDL_VideoQuit();
-    SDL_GL_DeleteContext(sdl_gl_context);
-    SDL_DestroyWindow(sdl_window);
-    SDL_Quit();
-}
 
 void handle_mouse_pressed_down(int button, float x, float y, AppGame *App) {
     switch (button) {
@@ -185,15 +134,15 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame *App) {
 }
 
 /* TODO move to shader */
-void draw_aim(AppGame *App) {
+void draw_aim(Window *window) {
     float pixel[3];
 
     glLogicOp(GL_COPY_INVERTED);
     glEnable(GL_COLOR_LOGIC_OP);
     glBegin(GL_POINTS);
     for (int i = 0; i < 20; i++) {
-        int x = App->screen_width / 2;
-        int y = (App->screen_height / 2) - 10;
+        int x = window->width / 2;
+        int y = (window->height / 2) - 10;
 
         glReadPixels(x, y + i, 1, 1, GL_RGB, GL_FLOAT, &pixel);
         glColor3f(pixel[0], pixel[1], pixel[2]);
@@ -208,8 +157,8 @@ void draw_aim(AppGame *App) {
     glBegin(GL_POINTS);
 
     for (int i = 0; i < 20; i++) {
-        int x = (App->screen_width / 2) - 10;
-        int y = (App->screen_height / 2);
+        int x = (window->width / 2) - 10;
+        int y = (window->height / 2);
 
         glReadPixels(x + i, y, 1, 1, GL_RGB, GL_FLOAT, &pixel);
         glColor3f(pixel[0], pixel[1], pixel[2]);
@@ -254,9 +203,9 @@ void load_textures(unsigned int texture, char *texture_name) {
     stbi_image_free(data);
 }
 
-void draw_3d_view_port(AppGame *App) {
-    int pixels_cols    = App->screen_width;
-    int draw_screen_h  = App->screen_height;
+void draw_3d_view_port(AppGame *App, Window *win) {
+    int pixels_cols    = win->width;
+    int draw_screen_h  = win->height;
     int wall_height    = App->map_height;
     int map_len        = App->map_cols;
     int(*map)[24]      = App->map_tile;
@@ -312,19 +261,19 @@ void draw_3d_view_port(AppGame *App) {
     }
 }
 
-void draw_3d_view_floor(AppGame *App) {
-    float       floor_start = App->screen_height / 2 - App->Player.pitch_view;
-    Rectangle_t floor = {0, floor_start, (float)App->screen_width, (float)App->screen_height + App->Player.pitch_view};
+void draw_3d_view_floor(AppGame* App, Window* win) {
+    float      floor_start = win->height / 2 - App->Player.pitch_view;
+    Rectanglef floor = {0, floor_start, (float)win->width, (float)win->height + App->Player.pitch_view};
     draw_rect(floor, DARKGRAY);
 }
 
-void draw(AppGame *App) {
-    draw_3d_view_floor(App);
-    draw_3d_view_port(App);
-    draw_aim(App);
+void draw(AppGame* App, Window* win) {
+    draw_3d_view_floor(App, win);
+    draw_3d_view_port(App, win);
+    draw_aim(win);
 }
 
-void handle_mouse_motion(AppGame *App, SDL_Event *event) {
+void handle_mouse_motion(AppGame* App, SDL_Event* event) {
     if (event->motion.state == (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK)) {
         handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y, App);
         handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y, App);
@@ -384,13 +333,17 @@ int main(int argc, char *args[]) {
     srand(time(NULL));
     char    title_format[] = "Simple Wolfenstein Engine - FPS %i";
     char    title[256]     = "Simple Wolfenstein Engine";
-    AppGame App            = {1920, 1080, title, 1, 0, {300, 300, 0, cos(TAU), -sin(TAU), 0, 70}, 24, 24, 32};
+    AppGame App            = {1, {300, 300, 0, cos(TAU), -sin(TAU), 0, 70}, 24, 24, 32};
     App.fps                = 60;
     for (int x = 0; x < App.map_cols; x++)
         for (int y = 0; y < App.map_rows; y++)
             App.map_tile[x][y] = map[x][y];
 
-    engine_SDL_OpenGL_setup(&App);
+    Window window_deamon = window_wake_up(title, 1920, 1080, false);
+    Keys keys_map;
+    Mouse mouse;
+    window_vsync(true);
+    window_keep_mouse_on_center(true);
     engine_SDL_OpenGL_load_textures(&App);
 
     const double freq_ms       = SDL_GetPerformanceFrequency();
@@ -403,7 +356,7 @@ int main(int argc, char *args[]) {
         double delta        = (current_time - last_time) / freq_ms * 1000.0;
         if (current_time > frame_timer + freq_ms) {
             sprintf(title, title_format, frame_counter);
-            SDL_SetWindowTitle(sdl_window, title);
+            SDL_SetWindowTitle(window_deamon.sdl_window_id, title);
             frame_counter = 0;
             frame_timer   = current_time;
         }
@@ -415,15 +368,16 @@ int main(int argc, char *args[]) {
                     App.run_status = 0;
                     break;
                 case SDL_KEYDOWN:
-                    handle_key(event.key.keysym, &App, 1);
+                    handle_key(event.key.keysym, &App, &keys_map, 1);
                     break;
                 case SDL_KEYUP:
-                    handle_key(event.key.keysym, &App, 0);
+                    handle_key(event.key.keysym, &App, &keys_map, 0);
                     break;
                 case SDL_MOUSEMOTION:
-                    handle_mouse_motion(&App, &event);
+                  handle_mouse_motion(&App, &event);
                     break;
                 case SDL_MOUSEBUTTONDOWN:
+
                     handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
                     break;
                 case SDL_MOUSEBUTTONUP:
@@ -438,13 +392,11 @@ int main(int argc, char *args[]) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             /* update here */
-            update(&App);
+            update(&App, &keys_map);
 
             /* draw here */
-            draw(&App);
-
-            /* update screen */
-            SDL_GL_SwapWindow(sdl_window);
+            draw(&App, &window_deamon);
+            window_finish_frame(&window_deamon);
 
             last_time = current_time;
             ++frame_counter;
@@ -452,6 +404,6 @@ int main(int argc, char *args[]) {
     }
 
     /* shutdown */
-    engine_SDL_OpenGL_shutdown(&App);
+    window_shutdown(&window_deamon);
     return 0;
 }
