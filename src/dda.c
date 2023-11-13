@@ -51,11 +51,11 @@ float normalize_rand(float rand) {
 
 DDA_t DDA(int map_tile[24][24], int map_height, int map_len, Point2f direction, Point2f start) {
     DDA_t dda_return;
-    dda_return.side                 = 0;
+    dda_return.side = 0;
     dda_return.grid_index_collision = -1;
-    float ray_total_max             = 1000.0;
-    float ray_total                 = 0.0;
-    bool  ray_bound                 = false;
+    float ray_total_max = 1000.0;
+    float ray_total = 0.0;
+    bool  ray_bound = false;
 
     Point2f delta = {direction.x / map_height - start.x / map_height,
                      direction.y / map_height - start.y / map_height};

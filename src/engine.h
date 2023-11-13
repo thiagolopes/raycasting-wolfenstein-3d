@@ -11,7 +11,7 @@ typedef struct{
   int width;
   int height;
   bool fullscreen;
-}Window;
+} Window;
 
 typedef struct{
     int a, w, s, d, shift, ctrl, j, k;
@@ -22,10 +22,10 @@ typedef struct{
 } Mouse;
 
 typedef struct{
-    unsigned char r; // Color red value
-    unsigned char g; // Color green value
-    unsigned char b; // Color blue value
-    unsigned char a; // Color alpha value
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    unsigned char a;
 } Color;
 
 Window window_wake_up(char* name, int height, int width, bool fullscreen);

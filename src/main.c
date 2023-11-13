@@ -340,8 +340,8 @@ int main(int argc, char *args[]) {
             App.map_tile[x][y] = map[x][y];
 
     Window window_deamon = window_wake_up(title, 1920, 1080, false);
-    Keys keys_map;
-    Mouse mouse;
+    Keys keys_map = {0};
+    Mouse mouse = {0};
     window_vsync(true);
     window_keep_mouse_on_center(true);
     engine_SDL_OpenGL_load_textures(&App);
