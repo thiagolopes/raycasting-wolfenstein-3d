@@ -37,9 +37,11 @@ void update_player(Keys* keys, Player_t* player) {
     /* FIX TO USE THE RELATIVE X/Y REF BASED ON THE PLAYER VIEW */
     if (keys->d == 1) {
         player->y -= player->direction_x * magntude;
+        player->x += player->direction_y * magntude;
     }
     if (keys->a == 1) {
         player->y += player->direction_x * magntude;
+        player->x -= player->direction_y * magntude;
     }
     if (keys->w == 1) {
         player->x += player->direction_x * magntude;
