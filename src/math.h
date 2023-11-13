@@ -2,16 +2,17 @@
 #define TAU 6.283185
 #define ONE_RAD 0.0174533
 
-
-typedef struct Point2f {
+typedef struct Point2f Point2f;
+struct Point2f {
     float x;
     float y;
-} Point2f;
+};
 
-typedef struct Point2i {
+typedef struct Point2i Point2i;
+struct Point2i {
     int x;
     int y;
-} Point2i;
+};
 
 Point2i point2i_normalize(Point2i point);
 Point2i point2i_sub(Point2i a, Point2i b);
