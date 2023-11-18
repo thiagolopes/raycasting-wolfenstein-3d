@@ -230,6 +230,8 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
         float   distance;
         Point2f point_end;
         DDA_t   ray_collision;
+        float distance_len;
+        Point2f distance_xy;
 
         angle       = normalize_rand(normalize_rand(player_angle - hfov_in_rad) + pixel_in_rad * pixel);
         point_end.x = point_start.x + cos(angle);
@@ -238,24 +240,26 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
         ray_collision = DDA(map, wall_height, map_len, point_end, point_start);
 
         if (ray_collision.valid) {
-            distance = fix_eye_fish(point2f_sub(point_start, ray_collision.collision_point), player_angle - angle);
-            /* distance = point2f_len(point2f_sub(point_start, ray_collision.collision_point)); */
+            distance_xy = point2f_sub(point_start, ray_collision.collision_point);
+            distance_len = point2f_len(distance_xy);
+            distance = fix_eye_fish(distance_xy, player_angle - angle);
 
             line_h     = (wall_height * draw_screen_h) / distance;
             line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
             line_end   = line_start + line_h;
 
+            #define SHADOW_MAX 500.0
+            float dd = distance_len / SHADOW_MAX;
+            draw_color.r = fabs(255 * dd - 255);
+            draw_color.g = fabs(255 * dd - 255);
+            draw_color.b = fabs(255 * dd - 255);
+
             if (ray_collision.side == HORIZONTAL) {
-                draw_color.r   = 255;
-                draw_color.g   = 255;
-                draw_color.b   = 255;
                 texture_offset = (float)((int)(ray_collision.collision_point.x) % wall_height) / wall_height;
             } else {
-                draw_color.r   = 255 / fade_draw_vertical;
-                draw_color.g   = 255 / fade_draw_vertical;
-                draw_color.b   = 255 / fade_draw_vertical;
                 texture_offset = (float)((int)(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
+
 
             draw_line(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset, draw_color);
         }
