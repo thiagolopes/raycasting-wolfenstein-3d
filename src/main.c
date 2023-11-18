@@ -306,6 +306,7 @@ int main(int argc, char *args[]) {
         for (int y = 0; y < App.map_rows; y++)
             App.map_tile[x][y] = map[x][y];
 
+    /* Window window_deamon = window_wake_up(title, 2560, 1440, false); */
     Window window_deamon = window_wake_up(title, 1920, 1080, false);
     Keys keys_map = {0};
     Mouse mouse = {0};
@@ -320,13 +321,15 @@ int main(int argc, char *args[]) {
     Texture t6 = texture_new("textures/hack_2.png", false);
     Texture t7 = texture_new("textures/console.png", false);
     Texture t8 = texture_new("textures/wall_damage_c.png", false);
-    Texture *textures[8] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8};
+    Texture t9 = texture_new("textures/wall_damage_c.png", false);
+    Texture *textures[9] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9};
 
     const double freq_ms       = SDL_GetPerformanceFrequency();
     Uint64       last_time     = SDL_GetPerformanceCounter();
     unsigned int frame_counter = 0;
     double       frame_timer   = last_time;
     const double frame_delta   = 1000.0 / App.fps;
+
     while (App.run_status) {
         Uint64 current_time = SDL_GetPerformanceCounter();
         double delta        = (current_time - last_time) / freq_ms * 1000.0;
@@ -371,6 +374,13 @@ int main(int argc, char *args[]) {
 
             /* draw here */
             draw(&App, &window_deamon, textures);
+
+            {
+              texture_bind(t9);
+              draw_rectf((Rectanglef){30, 30, 200, 200}, WHITE);
+              texture_unbind();
+            }
+
             window_finish_frame(&window_deamon);
 
             last_time = current_time;

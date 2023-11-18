@@ -1,4 +1,5 @@
 #include "engine.h"
+#include <GL/gl.h>
 
 void window_finish_frame(Window *window){
   SDL_GL_SwapWindow(window->sdl_window_id);
@@ -83,12 +84,21 @@ void window_shutdown(Window *runtime){
 }
 
 void draw_rectf(Rectanglef rect, Color color){
-    glBegin(GL_QUADS);
     glColor4ub(color.r, color.g, color.b, color.a);
+    glBegin(GL_QUADS);
+
+    glTexCoord2d(0.0, 1.0);
     glVertex2i(rect.x, rect.y);
+
+    glTexCoord2d(1.0, 1.0);
     glVertex2i(rect.x + rect.width, rect.y);
+
+    glTexCoord2d(1.0, 0.0);
     glVertex2i(rect.x + rect.width, rect.y + rect.height);
+
+    glTexCoord2d(0.0, 0.0);
     glVertex2i(rect.x, rect.y + rect.height);
+
     glEnd();
 }
 
@@ -106,6 +116,5 @@ void draw_line(float posX, float posY, float posY_end, int texture_id, float tex
     glVertex2i(posX, posY_end);
 
     glEnd();
-
     glDisable(GL_TEXTURE_2D); // TODO remove this after bind use in code
 }

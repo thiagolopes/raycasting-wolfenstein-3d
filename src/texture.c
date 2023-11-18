@@ -24,10 +24,12 @@ Texture texture_new(char* path, bool repeat) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t.width, t.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, t.data);
+    glBindTexture(GL_TEXTURE_2D, t.id);
     return t;
 };
 
 void texture_bind(Texture t){
+  glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, t.id);
 }
 
@@ -36,5 +38,5 @@ void texture_unbind(){
 }
 
 void texture_free(Texture* t){
-    stbi_image_free(t->data);
+  stbi_image_free(t->data);
 }
