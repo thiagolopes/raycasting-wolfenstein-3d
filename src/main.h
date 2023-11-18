@@ -1,8 +1,8 @@
 #define MOUSE_VELOCITY 0.002909
 
 typedef struct {
-    float  x, y;
     double angle, direction_x, direction_y;
+    float  x, y;
     int    pitch_view, fov;
 } Player_t;
 
@@ -17,8 +17,6 @@ typedef struct {
     int map_tile[24][24];
 
     /* engine */
-    unsigned int *texture;
-    unsigned int  texture_len;
     int           fps;
 } AppGame;
 

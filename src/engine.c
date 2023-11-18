@@ -107,5 +107,5 @@ void draw_line(float posX, float posY, float posY_end, int texture_id, float tex
 
     glEnd();
 
-    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_2D); // TODO remove this after bind use in code
 }

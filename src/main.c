@@ -23,33 +23,30 @@
 // #include "external/imgui/backends/imgui_impl_sdl2.h"
 // #include "external/imgui/imgui.h"
 
-// stb
-#define STB_IMAGE_IMPLEMENTATION
-#include "external/stb_image.h"
-
-
-// methods
-void update_player(Keys* keys, Player_t* player) {
+void update_player(Keys* keys, Player_t* player, int map[24][24]) {
     float magntude = 2;
     if (keys->shift == 1)
         magntude = 4;
 
+    float dx = 0, dy = 0;
+    float new_px=0, new_py=0;
+
     /* FIX TO USE THE RELATIVE X/Y REF BASED ON THE PLAYER VIEW */
     if (keys->d == 1) {
-        player->y -= player->direction_x * magntude;
-        player->x += player->direction_y * magntude;
+        dy -= player->direction_x * magntude;
+        dx += player->direction_y * magntude;
     }
     if (keys->a == 1) {
-        player->y += player->direction_x * magntude;
-        player->x -= player->direction_y * magntude;
+        dy += player->direction_x * magntude;
+        dx -= player->direction_y * magntude;
     }
     if (keys->w == 1) {
-        player->x += player->direction_x * magntude;
-        player->y += player->direction_y * magntude;
+        dx += player->direction_x * magntude;
+        dy += player->direction_y * magntude;
     }
     if (keys->s == 1) {
-        player->x -= player->direction_x * magntude;
-        player->y -= player->direction_y * magntude;
+        dx -= player->direction_x * magntude;
+        dy -= player->direction_y * magntude;
     }
     if (keys->j == 1) {
         player->fov -= 1;
@@ -57,11 +54,19 @@ void update_player(Keys* keys, Player_t* player) {
     if (keys->k == 1) {
         player->fov += 1;
     }
+
+    new_px = player->x + dx;
+    new_py = player->y + dy;
+
+    /* perform check bounds */
+    player->x = new_px;
+    player->y = new_py;
+
     player->angle = normalize_rand(player->angle);
 }
 
 void update(AppGame *App, Keys* keys) {
-  update_player(keys, &App->Player);
+  update_player(keys, &App->Player, App->map_tile);
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_action) {
@@ -152,32 +157,7 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame *App) {
     }
 }
 
-void load_textures(unsigned int texture, char *texture_name) {
-    stbi_set_flip_vertically_on_load(1);
-
-    int            f_width, f_height, bpp;
-    unsigned char *data = stbi_load(texture_name, &f_width, &f_height, &bpp, STBI_rgb_alpha);
-    if (!data) {
-        SDL_Log("load data error");
-    }
-
-    /* init texture from file pixels to GPU MEMORY*/
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                    GL_CLAMP_TO_BORDER); // set texture wrapping to GL_REPEAT (default wrapping
-                                         // method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, f_width, f_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-    stbi_image_free(data);
-}
-
-void draw_3d_view_port(AppGame *App, Window *win) {
+void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
     int pixels_cols    = win->width;
     int draw_screen_h  = win->height;
     int wall_height    = App->map_height;
@@ -242,9 +222,9 @@ void draw_3d_view_floor(AppGame* App, Window* win) {
     draw_rectf(floor, DARKGRAY);
 }
 
-void draw(AppGame* App, Window* win) {
+void draw(AppGame* App, Window* win, Texture* texture) {
     draw_3d_view_floor(App, win);
-    draw_3d_view_port(App, win);
+    draw_3d_view_port(App, win, texture);
     draw_aim(win);
 }
 
@@ -268,47 +248,12 @@ void handle_mouse_motion(AppGame* App, SDL_Event* event) {
     }
 }
 
-void engine_SDL_OpenGL_load_textures(AppGame *App) {
-    char texture_dir[100] = "./textures/";
-    // setup texture memory
-    App->texture_len = 0;
-
-    DIR           *textures_dirs;
-    struct dirent *ent;
-    if ((textures_dirs = opendir(texture_dir)) != NULL) {
-        while ((ent = readdir(textures_dirs)) != NULL) {
-            App->texture_len += 1;
-        }
-    } else {
-        // error
-    }
-
-    App->texture = (unsigned int *)malloc(sizeof(unsigned int) * App->texture_len);
-    glGenTextures(App->texture_len, App->texture);
-
-    // load texture
-    char dir_cat[100];
-    seekdir(textures_dirs, 0);
-    for (int i = (App->texture_len - 1); i >= 0; i--) {
-        ent = readdir(textures_dirs);
-        if (strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
-            strcpy(dir_cat, "");
-            strcpy(dir_cat, texture_dir);
-            strcat(dir_cat, ent->d_name);
-            printf("%s\n", dir_cat);
-            load_textures(App->texture[i], dir_cat);
-        }
-    }
-    closedir(textures_dirs);
-    free(App->texture);
-}
-
 // main
 int main(int argc, char *args[]) {
     srand(time(NULL));
     char    title_format[] = "Simple Wolfenstein Engine - FPS %i";
     char    title[256]     = "Simple Wolfenstein Engine";
-    AppGame App            = {1, {300, 300, 0, cos(TAU), -sin(TAU), 0, 70}, 24, 24, 32};
+    AppGame App            = {1, {0, cos(TAU), -sin(TAU), 300, 300, 0, 70}, 24, 24, 32};
     App.fps                = 144;
     for (int x = 0; x < App.map_cols; x++)
         for (int y = 0; y < App.map_rows; y++)
@@ -319,7 +264,16 @@ int main(int argc, char *args[]) {
     Mouse mouse = {0};
     window_vsync(true);
     window_capture_cursor(true);
-    engine_SDL_OpenGL_load_textures(&App);
+
+    Texture t1 = texture_new("textures/brick_white.png", false);
+    Texture t2 = texture_new("textures/wall.png", false);
+    Texture t3 = texture_new("textures/facility.png", false);
+    Texture t4 = texture_new("textures/grass.png", false);
+    Texture t5 = texture_new("textures/hack_1.png", false);
+    Texture t6 = texture_new("textures/hack_2.png", false);
+    Texture t7 = texture_new("textures/console.png", false);
+    Texture t8 = texture_new("textures/wall_damage_c.png", false);
+    Texture *textures[8] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8};
 
     const double freq_ms       = SDL_GetPerformanceFrequency();
     Uint64       last_time     = SDL_GetPerformanceCounter();
@@ -369,7 +323,7 @@ int main(int argc, char *args[]) {
             update(&App, &keys_map);
 
             /* draw here */
-            draw(&App, &window_deamon);
+            draw(&App, &window_deamon, textures);
             window_finish_frame(&window_deamon);
 
             last_time = current_time;
