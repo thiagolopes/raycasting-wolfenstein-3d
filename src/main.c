@@ -250,20 +250,22 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
 
             #define SHADOW_MAX 500.0
             float dd = distance_len / SHADOW_MAX;
-            draw_color.r = fabs(255 * dd - 255);
-            draw_color.g = fabs(255 * dd - 255);
-            draw_color.b = fabs(255 * dd - 255);
+            if (dd > 1)
+              dd = 1.0;
+            float color = fabs(255 * dd - 255);
+            draw_color.r = color;
+            draw_color.g = color;
+            draw_color.b = color;
 
             if (ray_collision.side == HORIZONTAL) {
                 texture_offset = (float)((int)(ray_collision.collision_point.x) % wall_height) / wall_height;
             } else {
                 texture_offset = (float)((int)(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
-
-
             draw_line(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset, draw_color);
         }
     }
+
 }
 
 void draw_3d_view_floor(AppGame* App, Window* win) {
