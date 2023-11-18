@@ -1,12 +1,14 @@
 CC=gcc
-CFLAGS=-Wextra -Wall -Wfloat-equal -Wshadow -ffunction-sections
+CCFLAGS=-Wextra -Wall -Wfloat-equal -Wshadow -ffunction-sections -g
 LIBS=-lm -lSDL2 -lOpenGL
 
 MAIN=src/main.c
 FILES=src/math.c src/engine.c src/texture.c
 
+all: main run
+
 main:
-	 $(CC) $(MAIN) $(FILES) -o raycasting $(LIBS) $(CFLAGS)
+	 $(CC) $(MAIN) $(FILES) -o raycasting $(LIBS) $(CCFLAGS)
 
 run:
 	./raycasting
