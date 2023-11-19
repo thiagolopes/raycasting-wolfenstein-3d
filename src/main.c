@@ -17,6 +17,7 @@
 #include "texture.h"
 #include "colors.h"
 #include "dda.c"
+#include "map.h"
 
 // imgui
 // #include "external/imgui/backends/imgui_impl_opengl3.h"
@@ -300,6 +301,8 @@ int main(int argc, char *args[]) {
     Texture t9 = texture_new("textures/wall_damage_c.png", false);
     Texture *textures[9] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9};
 
+    Grid grid = grid_load("maps/map_01");
+    
     const double freq_ms       = SDL_GetPerformanceFrequency();
     Uint64       last_time     = SDL_GetPerformanceCounter();
     unsigned int frame_counter = 0;
