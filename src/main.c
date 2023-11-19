@@ -39,13 +39,12 @@ typedef struct {
     int map_cols;
     int map_rows;
     int map_height;
+    int fps;
     int map_tile[24][24];
-
     /* engine */
-    int           fps;
 } AppGame;
 
-int map[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6, 4},
+int MAP[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6, 4},
                    {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
                    {8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
                    {8, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
@@ -70,7 +69,7 @@ int map[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 
                    {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
                    {2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5}};
 
-void update_player(Keys* keys, Player_t* player, int map[24][24]) {
+void update_player(Keys* keys, Player_t* player) {
     float magntude = 2;
     if (keys->shift == 1)
         magntude = 4;
@@ -113,7 +112,7 @@ void update_player(Keys* keys, Player_t* player, int map[24][24]) {
 }
 
 void update(AppGame *App, Keys* keys) {
-  update_player(keys, &App->Player, App->map_tile);
+  update_player(keys, &App->Player);
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_action) {
@@ -150,40 +149,8 @@ static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_a
     }
 }
 
-/* TODO move to shader */
+
 void draw_aim(Window *window) {
-    float pixel[3];
-
-    glLogicOp(GL_COPY_INVERTED);
-    glEnable(GL_COLOR_LOGIC_OP);
-    glBegin(GL_POINTS);
-    for (int i = 0; i < 20; i++) {
-        int x = window->width / 2;
-        int y = (window->height / 2) - 10;
-
-        glReadPixels(x, y + i, 1, 1, GL_RGB, GL_FLOAT, &pixel);
-        glColor3f(pixel[0], pixel[1], pixel[2]);
-        glVertex2i(x, y + i);
-    }
-    glEnd();
-    glLogicOp(GL_COPY);
-    glDisable(GL_COLOR_LOGIC_OP);
-
-    glLogicOp(GL_COPY_INVERTED);
-    glEnable(GL_COLOR_LOGIC_OP);
-    glBegin(GL_POINTS);
-
-    for (int i = 0; i < 20; i++) {
-        int x = (window->width / 2) - 10;
-        int y = (window->height / 2);
-
-        glReadPixels(x + i, y, 1, 1, GL_RGB, GL_FLOAT, &pixel);
-        glColor3f(pixel[0], pixel[1], pixel[2]);
-        glVertex2i(x + i, y);
-    }
-    glEnd();
-    glLogicOp(GL_COPY);
-    glDisable(GL_COLOR_LOGIC_OP);
 }
 
 void handle_mouse_pressed_up(int button, float x, float y, AppGame *App) {
@@ -310,11 +277,10 @@ int main(int argc, char *args[]) {
     srand(time(NULL));
     char    title_format[] = "Simple Wolfenstein Engine - FPS %i";
     char    title[256]     = "Simple Wolfenstein Engine";
-    AppGame App            = {1, {0, cos(TAU), -sin(TAU), 300, 300, 0, 70}, 24, 24, 32};
-    App.fps                = 144;
+    AppGame App            = {1, {0, cos(TAU), -sin(TAU), 300, 300, 0, 70}, 24, 24, 32, 144, 0};
     for (int x = 0; x < App.map_cols; x++)
         for (int y = 0; y < App.map_rows; y++)
-            App.map_tile[x][y] = map[x][y];
+            App.map_tile[x][y] = MAP[x][y];
 
     /* Window window_deamon = window_wake_up(title, 2560, 1440, false); */
     Window window_deamon = window_wake_up(title, 1920, 1080, false);
