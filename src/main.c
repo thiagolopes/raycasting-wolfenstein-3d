@@ -216,8 +216,8 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
             line_end   = line_start + line_h;
 
             #define SHADOW_MAX 500.0
-            #define FAR 1.0
-            #define NEAR 0.0
+            #define FAR 2.0
+            #define NEAR 0.1
             float dd = 1;
             if (distance_len < SHADOW_MAX){
               dd = distance_len / SHADOW_MAX;
