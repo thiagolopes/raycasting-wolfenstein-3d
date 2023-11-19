@@ -249,10 +249,14 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
             line_end   = line_start + line_h;
 
             #define SHADOW_MAX 500.0
-            float dd = distance_len / SHADOW_MAX;
-            if (dd > 1)
-              dd = 1.0;
-            float color = fabs(255 * dd - 255);
+            #define FAR 1.0
+            #define NEAR 0.0
+            float dd = 1;
+            if (distance_len < SHADOW_MAX){
+              dd = distance_len / SHADOW_MAX;
+            }
+            float cp = (dd * (FAR - NEAR) + (FAR + NEAR)) / 2.0;
+            float color = 255 - 255 * cp;
             draw_color.r = color;
             draw_color.g = color;
             draw_color.b = color;
