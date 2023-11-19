@@ -12,3 +12,6 @@ main:
 
 run:
 	./raycasting
+
+TAGS:
+	ctags -e -R .
