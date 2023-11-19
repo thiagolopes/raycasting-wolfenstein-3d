@@ -275,8 +275,8 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
 void draw_3d_view_floor(AppGame* App, Window* win) {
     float floor_start = win->height / 2 - App->Player.pitch_view;
     Rectanglef floor = {0, floor_start, (float)win->width,
-                        (float)win->height + App->Player.pitch_view};
-    draw_rectf(floor, DARKGRAY);
+			(float)win->height + App->Player.pitch_view};
+    draw_rectf_gradient(floor, BLACK, DARKGRAY);
 }
 
 void draw(AppGame* App, Window* win, Texture* texture) {

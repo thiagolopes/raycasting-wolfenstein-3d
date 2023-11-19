@@ -52,4 +52,5 @@ void window_shutdown(Window *window);
 
 /* primitive draws calls */
 void draw_rectf(Rectanglef rect, Color color);
+void draw_rectf_gradient(Rectanglef r, Color c_top, Color c_bottom);
 void draw_line(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color);

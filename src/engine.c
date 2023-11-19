@@ -83,21 +83,41 @@ void window_shutdown(Window *runtime){
     SDL_Quit();
 }
 
-void draw_rectf(Rectanglef rect, Color color){
-    glColor4ub(color.r, color.g, color.b, color.a);
+void draw_rectf_gradient(Rectanglef r, Color c_top, Color c_bottom ){
+    glBegin(GL_QUADS);
+
+    glColor4ub(c_top.r, c_top.g, c_top.b, c_top.a);
+    glTexCoord2d(0.0, 1.0);
+    glVertex2i(r.x, r.y);
+
+    glTexCoord2d(1.0, 1.0);
+    glVertex2i(r.x + r.width, r.y);
+
+    glColor4ub(c_bottom.r, c_bottom.g, c_bottom.b, c_bottom.a);
+    glTexCoord2d(1.0, 0.0);
+    glVertex2i(r.x + r.width, r.y + r.height);
+
+    glTexCoord2d(0.0, 0.0);
+    glVertex2i(r.x, r.y + r.height);
+
+    glEnd();
+}
+
+void draw_rectf(Rectanglef r, Color c){
+    glColor4ub(c.r, c.g, c.b, c.a);
     glBegin(GL_QUADS);
 
     glTexCoord2d(0.0, 1.0);
-    glVertex2i(rect.x, rect.y);
+    glVertex2i(r.x, r.y);
 
     glTexCoord2d(1.0, 1.0);
-    glVertex2i(rect.x + rect.width, rect.y);
+    glVertex2i(r.x + r.width, r.y);
 
     glTexCoord2d(1.0, 0.0);
-    glVertex2i(rect.x + rect.width, rect.y + rect.height);
+    glVertex2i(r.x + r.width, r.y + r.height);
 
     glTexCoord2d(0.0, 0.0);
-    glVertex2i(rect.x, rect.y + rect.height);
+    glVertex2i(r.x, r.y + r.height);
 
     glEnd();
 }
