@@ -47,7 +47,7 @@ typedef struct {
 
 int MAP[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6, 4},
                    {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
-                   {8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
+                   {8, 0, 9, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
                    {8, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
                    {8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
                    {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 6, 6, 6, 0, 6, 4, 6},
@@ -71,9 +71,9 @@ int MAP[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 
                    {2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5}};
 
 void update_player(Keys* keys, Player_t* player) {
-    float magntude = 2;
+    float magntude = 1;
     if (keys->shift == 1)
-        magntude = 4;
+        magntude = 2;
 
     float dx = 0, dy = 0;
     float new_px=0, new_py=0;
@@ -105,9 +105,19 @@ void update_player(Keys* keys, Player_t* player) {
     new_px = player->x + dx;
     new_py = player->y + dy;
 
-    /* perform check bounds */
-    player->x = new_px;
-    player->y = new_py;
+    #define H 32
+    #define BODY_AREA 4
+    int o_mx = (int)(player->x / H);
+    int o_my = (int)(player->y / H);
+    int mx = (int)((player->x + (dx * BODY_AREA)) / H);
+    int my = (int)((player->y + (dy * BODY_AREA)) / H);
+
+    if (MAP[o_my][mx] == 0){
+      player->x = new_px;
+    }
+    if (MAP[my][o_mx] == 0){
+      player->y = new_py;
+    }
 
     player->angle = normalize_rand(player->angle);
 }
@@ -243,7 +253,7 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
 void draw_3d_view_floor(AppGame* App, Window* win) {
     float floor_start = win->height / 2 - App->Player.pitch_view;
     Rectanglef floor = {0, floor_start, (float)win->width,
-			(float)win->height + App->Player.pitch_view};
+                        (float)win->height + App->Player.pitch_view};
     draw_rectf_gradient(floor, BLACK, DARKGRAY);
 }
 
@@ -278,7 +288,7 @@ int main(int argc, char *args[]) {
     srand(time(NULL));
     char    title_format[] = "Simple Wolfenstein Engine - FPS %i";
     char    title[256]     = "Simple Wolfenstein Engine";
-    AppGame App            = {1, {0, cos(TAU), -sin(TAU), 300, 300, 0, 70}, 24, 24, 32, 144, 0};
+    AppGame App            = {1, {0, cos(TAU), -sin(TAU), 50, 50, 0, 70}, 24, 24, 32, 144, 0};
     for (int x = 0; x < App.map_cols; x++)
         for (int y = 0; y < App.map_rows; y++)
             App.map_tile[x][y] = MAP[x][y];
@@ -298,11 +308,11 @@ int main(int argc, char *args[]) {
     Texture t6 = texture_new("textures/hack_2.png", false);
     Texture t7 = texture_new("textures/console.png", false);
     Texture t8 = texture_new("textures/wall_damage_c.png", false);
-    Texture t9 = texture_new("textures/wall_damage_c.png", false);
+    Texture t9 = texture_new("textures/test.png", false);
     Texture *textures[9] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9};
 
     Grid grid = grid_load("maps/map_01");
-    
+
     const double freq_ms       = SDL_GetPerformanceFrequency();
     Uint64       last_time     = SDL_GetPerformanceCounter();
     unsigned int frame_counter = 0;
