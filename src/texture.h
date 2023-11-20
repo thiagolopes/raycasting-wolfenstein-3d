@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdlib.h>
-#include <GL/gl.h>
+#include <SDL2/SDL_opengl.h>
 
 typedef struct Texture Texture;
 struct Texture {
