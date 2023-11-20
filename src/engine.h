@@ -2,6 +2,9 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#include "math.h"
+
+#define TEXTURE_NO_OFFSET
 
 typedef struct Window Window;
 struct Window {
@@ -53,4 +56,5 @@ void window_shutdown(Window *window);
 /* primitive draws calls */
 void draw_rectf(Rectanglef rect, Color color);
 void draw_rectf_gradient(Rectanglef r, Color c_top, Color c_bottom);
-void draw_line(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color);
+void draw_line(Point2f p1, Point2f p2, float texture_offset, Color color);
+void draw_line_vertical(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color);

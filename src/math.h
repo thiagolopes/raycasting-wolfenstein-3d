@@ -1,3 +1,4 @@
+#pragma once
 #define PI 3.141592
 #define TAU 6.283185
 #define ONE_RAD 0.0174533

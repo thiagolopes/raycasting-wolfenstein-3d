@@ -1,5 +1,4 @@
 #include "engine.h"
-#include <GL/gl.h>
 
 void window_finish_frame(Window *window){
   SDL_GL_SwapWindow(window->sdl_window_id);
@@ -122,7 +121,19 @@ void draw_rectf(Rectanglef r, Color c){
     glEnd();
 }
 
-void draw_line(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color){
+void draw_line(Point2f p1, Point2f p2, float texture_offset, Color color){
+    glBegin(GL_LINES);
+    glColor4ub(color.r, color.g, color.b, color.a);
+
+    glTexCoord2d(texture_offset, 1.0);
+    glVertex2i(p1.x, p1.y);
+
+    glTexCoord2d(texture_offset, 0.0);
+    glVertex2i(p2.x, p2.y);
+    glEnd();
+}
+
+void draw_line_vertical(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color){
     glColor4ub(color.r, color.g, color.b, color.a);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texture_id);

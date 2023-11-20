@@ -244,7 +244,7 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
             } else {
                 texture_offset = (float)((int)(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
-            draw_line(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset, draw_color);
+            draw_line_vertical(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset, draw_color);
         }
     }
 
