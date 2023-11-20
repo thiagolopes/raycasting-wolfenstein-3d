@@ -45,38 +45,13 @@ typedef struct {
     /* engine */
 } AppGame;
 
-int MAP[24][24] = {{8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6, 4},
-                   {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
-                   {8, 0, 9, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-                   {8, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-                   {8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
-                   {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 6, 6, 6, 0, 6, 4, 6},
-                   {8, 8, 8, 8, 0, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4, 6, 0, 0, 0, 0, 0, 6},
-                   {3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 8, 0, 8, 0, 8, 0, 8, 4, 0, 4, 0, 6, 0, 6},
-                   {3, 7, 0, 0, 0, 0, 0, 0, 3, 8, 0, 8, 0, 8, 0, 8, 8, 6, 0, 0, 0, 0, 0, 6},
-                   {6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 0, 0, 0, 0, 4},
-                   {6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 6, 0, 6, 0, 6},
-                   {3, 7, 0, 0, 0, 0, 0, 0, 3, 8, 0, 8, 0, 8, 0, 8, 8, 6, 4, 6, 0, 6, 6, 6},
-                   {3, 3, 3, 3, 0, 3, 3, 3, 3, 8, 8, 4, 0, 6, 8, 4, 8, 3, 3, 3, 0, 3, 3, 3},
-                   {2, 2, 2, 2, 0, 2, 2, 2, 2, 4, 6, 4, 0, 0, 6, 0, 6, 3, 0, 0, 0, 0, 0, 3},
-                   {2, 2, 0, 0, 0, 0, 0, 2, 2, 4, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 3},
-                   {2, 0, 0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 3},
-                   {1, 0, 0, 0, 0, 0, 0, 0, 1, 4, 4, 4, 4, 4, 6, 0, 6, 3, 3, 0, 0, 0, 3, 3},
-                   {2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 2, 2, 2, 6, 6, 0, 0, 5, 0, 5, 0, 5},
-                   {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
-                   {2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5},
-                   {1, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5},
-                   {2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5},
-                   {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
-                   {2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5}};
-
-void update_player(Keys* keys, Player_t* player) {
+void update_player(Keys* keys, Player_t* player, Grid grid) {
     float magntude = 1;
     if (keys->shift == 1)
         magntude = 2;
 
     float dx = 0, dy = 0;
-    float new_px=0, new_py=0;
+    float new_px = 0, new_py = 0;
 
     /* FIX TO USE THE RELATIVE X/Y REF BASED ON THE PLAYER VIEW */
     if (keys->d == 1) {
@@ -109,80 +84,74 @@ void update_player(Keys* keys, Player_t* player) {
 #define BODY_AREA 4
     int o_mx = (int)(player->x / H);
     int o_my = (int)(player->y / H);
-    int mx = (int)((player->x + (dx * BODY_AREA)) / H);
-    int my = (int)((player->y + (dy * BODY_AREA)) / H);
+    int mx   = (int)((player->x + (dx * BODY_AREA)) / H);
+    int my   = (int)((player->y + (dy * BODY_AREA)) / H);
 
-    if (MAP[o_my][mx] == 0){
+    if (grid.cels[o_my][mx].raw_value == 0) {
         player->x = new_px;
     }
-    if (MAP[my][o_mx] == 0){
+    if (grid.cels[my][o_mx].raw_value == 0) {
         player->y = new_py;
     }
 
     player->angle = normalize_rand(player->angle);
 }
 
-void update(AppGame *App, Keys* keys) {
-    update_player(keys, &App->Player);
-}
-
 static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_action) {
     switch (keysym.sym) {
-    case SDLK_ESCAPE:
-        App->run_status = 0;
-        break;
-    case SDLK_a:
-        keys->a = button_action;
-        break;
-    case SDLK_d:
-        keys->d = button_action;
-        break;
-    case SDLK_w:
-        keys->w = button_action;
-        break;
-    case SDLK_s:
-        keys->s = button_action;
-        break;
-    case SDLK_LSHIFT:
-        keys->shift = button_action;
-        break;
-    case SDLK_j:
-        keys->j = button_action;
-        keys->k = 0;
-        break;
-    case SDLK_k:
-        keys->k = button_action;
-        keys->j = 0;
-        break;
-    case SDLK_LCTRL:
-        keys->ctrl = button_action;
-        break;
+        case SDLK_ESCAPE:
+            App->run_status = 0;
+            break;
+        case SDLK_a:
+            keys->a = button_action;
+            break;
+        case SDLK_d:
+            keys->d = button_action;
+            break;
+        case SDLK_w:
+            keys->w = button_action;
+            break;
+        case SDLK_s:
+            keys->s = button_action;
+            break;
+        case SDLK_LSHIFT:
+            keys->shift = button_action;
+            break;
+        case SDLK_j:
+            keys->j = button_action;
+            keys->k = 0;
+            break;
+        case SDLK_k:
+            keys->k = button_action;
+            keys->j = 0;
+            break;
+        case SDLK_LCTRL:
+            keys->ctrl = button_action;
+            break;
     }
 }
 
+void draw_aim(Window* window) {}
 
-void draw_aim(Window *window) {
-}
-
-void handle_mouse_pressed_up(int button, float x, float y, AppGame *App) {
+void handle_mouse_pressed_up(int button, float x, float y, AppGame* App) {
     switch (button) {
-    case SDL_BUTTON_LEFT:
-        break;
-    case SDL_BUTTON_RIGHT:
-        break;
+        case SDL_BUTTON_LEFT:
+            break;
+        case SDL_BUTTON_RIGHT:
+            break;
     }
 }
 
-void handle_mouse_pressed_down(int button, float x, float y, AppGame *App) {
+void handle_mouse_pressed_down(int button, float x, float y, AppGame* App) {
     switch (button) {
-    case SDL_BUTTON_LEFT:
-        break;
-    case SDL_BUTTON_RIGHT:
-        break;
+        case SDL_BUTTON_LEFT:
+            break;
+        case SDL_BUTTON_RIGHT:
+            break;
     }
 }
 
-void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
+void draw_3d_view_port(AppGame* App, Window* win, Texture* t) {
     int pixels_cols    = win->width;
     int draw_screen_h  = win->height;
     int wall_height    = App->map_height;
@@ -208,7 +177,7 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
         float   distance;
         Point2f point_end;
         DDA_t   ray_collision;
-        float distance_len;
+        float   distance_len;
         Point2f distance_xy;
 
         angle       = normalize_rand(normalize_rand(player_angle - hfov_in_rad) + pixel_in_rad * pixel);
@@ -218,9 +187,9 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
         ray_collision = DDA(map, wall_height, map_len, point_end, point_start);
 
         if (ray_collision.valid) {
-            distance_xy = point2f_sub(point_start, ray_collision.collision_point);
+            distance_xy  = point2f_sub(point_start, ray_collision.collision_point);
             distance_len = point2f_len(distance_xy);
-            distance = fix_eye_fish(distance_xy, player_angle - angle);
+            distance     = fix_eye_fish(distance_xy, player_angle - angle);
 
             line_h     = (wall_height * draw_screen_h) / distance;
             line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
@@ -230,11 +199,11 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
 #define FAR 2.0
 #define NEAR 0.1
             float dd = 1;
-            if (distance_len < SHADOW_MAX){
+            if (distance_len < SHADOW_MAX) {
                 dd = distance_len / SHADOW_MAX;
             }
-            float cp = (dd * (FAR - NEAR) + (FAR + NEAR)) / 2.0;
-            float color = 255 - 255 * cp;
+            float cp     = (dd * (FAR - NEAR) + (FAR + NEAR)) / 2.0;
+            float color  = 255 - 255 * cp;
             draw_color.r = color;
             draw_color.g = color;
             draw_color.b = color;
@@ -244,16 +213,15 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
             } else {
                 texture_offset = (float)((int)(ray_collision.collision_point.y) % wall_height) / wall_height;
             }
-            draw_line_vertical(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset, draw_color);
+            draw_line_vertical(pixel, line_start, line_end, ray_collision.grid_index_collision, texture_offset,
+                               draw_color);
         }
     }
-
 }
 
 void draw_3d_view_floor(AppGame* App, Window* win) {
-    float floor_start = win->height / 2 - App->Player.pitch_view;
-    Rectanglef floor = {0, floor_start, (float)win->width,
-                        (float)win->height + App->Player.pitch_view};
+    float      floor_start = win->height / 2 - App->Player.pitch_view;
+    Rectanglef floor       = {0, floor_start, (float)win->width, (float)win->height + App->Player.pitch_view};
     draw_rectf_gradient(floor, BLACK, DARKGRAY);
 }
 
@@ -274,45 +242,46 @@ void handle_mouse_motion(AppGame* App, SDL_Event* event) {
     }
 
     switch (event->type) {
-    case SDL_MOUSEMOTION:
-        App->Player.pitch_view += (event->motion.yrel * 3);
-        App->Player.angle += MOUSE_VELOCITY * event->motion.xrel;
-        App->Player.direction_x = cos(App->Player.angle);
-        App->Player.direction_y = -sin(App->Player.angle);
-        break;
+        case SDL_MOUSEMOTION:
+            App->Player.pitch_view += (event->motion.yrel * 3);
+            App->Player.angle += MOUSE_VELOCITY * event->motion.xrel;
+            App->Player.direction_x = cos(App->Player.angle);
+            App->Player.direction_y = -sin(App->Player.angle);
+            break;
     }
 }
 
 // main
-int main(int argc, char *args[]) {
+int main(int argc, char* args[]) {
     srand(time(NULL));
     char    title_format[] = "Simple Wolfenstein Engine - FPS %i";
     char    title[256]     = "Simple Wolfenstein Engine";
     AppGame App            = {1, {0, cos(TAU), -sin(TAU), 50, 50, 0, 70}, 24, 24, 32, 144, 0};
-    for (int x = 0; x < App.map_cols; x++)
-        for (int y = 0; y < App.map_rows; y++)
-            App.map_tile[x][y] = MAP[x][y];
 
     /* Window window_deamon = window_wake_up(title, 2560, 1440, false); */
     Window window_deamon = window_wake_up(title, 1920, 1080, false);
-    Keys keys_map = {0};
-    Mouse mouse = {0};
+    Keys   keys_map      = {0};
+    Mouse  mouse         = {0};
     window_vsync(true);
     window_capture_cursor(true);
 
-    Texture t1 = texture_new("textures/brick_white.png", false);
-    Texture t2 = texture_new("textures/wall.png", false);
-    Texture t3 = texture_new("textures/facility.png", false);
-    Texture t4 = texture_new("textures/grass.png", false);
-    Texture t5 = texture_new("textures/hack_1.png", false);
-    Texture t6 = texture_new("textures/hack_2.png", false);
-    Texture t7 = texture_new("textures/console.png", false);
-    Texture t8 = texture_new("textures/wall_damage_c.png", false);
-    Texture t9 = texture_new("textures/test.png", false);
-    Texture *textures[9] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9};
+    Texture  t1          = texture_new("textures/brick_white.png", false);
+    Texture  t2          = texture_new("textures/wall.png", false);
+    Texture  t3          = texture_new("textures/facility.png", false);
+    Texture  t4          = texture_new("textures/grass.png", false);
+    Texture  t5          = texture_new("textures/hack_1.png", false);
+    Texture  t6          = texture_new("textures/hack_2.png", false);
+    Texture  t7          = texture_new("textures/console.png", false);
+    Texture  t8          = texture_new("textures/wall_damage_c.png", false);
+    Texture  t9          = texture_new("textures/test.png", false);
+    Texture* textures[9] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9};
 
     Grid grid = grid_load("maps/map_01");
-
+    for (int x = 0; x < App.map_cols; x++) {
+        for (int y = 0; y < App.map_rows; y++) {
+            App.map_tile[x][y] = grid.cels[x][y].raw_value;
+        }
+    }
     const double freq_ms       = SDL_GetPerformanceFrequency();
     Uint64       last_time     = SDL_GetPerformanceCounter();
     unsigned int frame_counter = 0;
@@ -332,24 +301,24 @@ int main(int argc, char *args[]) {
         SDL_Event event;
         while (SDL_PollEvent(&event) != 0) {
             switch (event.type) {
-            case SDL_QUIT:
-                App.run_status = 0;
-                break;
-            case SDL_KEYDOWN:
-                handle_key(event.key.keysym, &App, &keys_map, 1);
-                break;
-            case SDL_KEYUP:
-                handle_key(event.key.keysym, &App, &keys_map, 0);
-                break;
-            case SDL_MOUSEMOTION:
-                handle_mouse_motion(&App, &event);
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-                handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
-                break;
-            case SDL_MOUSEBUTTONUP:
-                handle_mouse_pressed_up(event.button.button, event.button.x, event.button.y, &App);
-                break;
+                case SDL_QUIT:
+                    App.run_status = 0;
+                    break;
+                case SDL_KEYDOWN:
+                    handle_key(event.key.keysym, &App, &keys_map, 1);
+                    break;
+                case SDL_KEYUP:
+                    handle_key(event.key.keysym, &App, &keys_map, 0);
+                    break;
+                case SDL_MOUSEMOTION:
+                    handle_mouse_motion(&App, &event);
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                    handle_mouse_pressed_up(event.button.button, event.button.x, event.button.y, &App);
+                    break;
             }
         }
 
@@ -359,7 +328,7 @@ int main(int argc, char *args[]) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             /* update here */
-            update(&App, &keys_map);
+            update_player(&keys_map, &App.Player, grid);
 
             /* draw here */
             draw(&App, &window_deamon, textures);
