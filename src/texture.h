@@ -4,23 +4,22 @@
 #include <stdlib.h>
 #include <GL/gl.h>
 
-
 typedef struct Texture Texture;
 struct Texture {
-  unsigned int id;
-  bool repeat;
-  char* name;
-  int width;
-  int height;
-  int bpp;
-  unsigned char *data;
+    unsigned int id;
+    bool repeat;
+    char* name;
+    int width;
+    int height;
+    int bpp;
+    unsigned char *data;
 };
 
 typedef struct TextureContainer TextureContainer;
 struct TextureContainer {
-  unsigned int len;
-  unsigned int capacity;
-  Texture* textures;
+    unsigned int len;
+    unsigned int capacity;
+    Texture* textures;
 };
 
 Texture texture_new(char* path, bool repeat);

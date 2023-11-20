@@ -8,8 +8,8 @@ Point2i point2i_normalize(Point2i point){
 }
 
 Point2i point2i_sub(Point2i a, Point2i b){
-  Point2i p = {a.x - b.x, a.y - b.y};
-  return p;
+    Point2i p = {a.x - b.x, a.y - b.y};
+    return p;
 }
 
 int point2i_len(Point2i point){

@@ -1,4 +1,3 @@
-// clang-format off
 #define LIGHTGRAY  (Color){ 200, 200, 200, 255 }   // Light Gray
 #define GRAY       (Color){ 130, 130, 130, 255 }   // Gray
 #define DARKGRAY   (Color){ 80, 80, 80, 255 }      // Dark Gray
@@ -24,4 +23,3 @@
 #define BLACK      (Color){ 0, 0, 0, 255 }         // Black
 #define BLANK      (Color){ 0, 0, 0, 0 }           // Blank (Transparent)
 #define MAGENTA    (Color){ 255, 0, 255, 255 }     // Magenta
-// clang-format on

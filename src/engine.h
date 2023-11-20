@@ -8,12 +8,12 @@
 
 typedef struct Window Window;
 struct Window {
-  SDL_Window* sdl_window_id;
-  SDL_GLContext sdl_gl_context_id;
-  char* name;
-  int width;
-  int height;
-  bool fullscreen;
+    SDL_Window* sdl_window_id;
+    SDL_GLContext sdl_gl_context_id;
+    char* name;
+    int width;
+    int height;
+    bool fullscreen;
 };
 
 typedef struct Renderer Renderer;

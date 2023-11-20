@@ -1,33 +1,33 @@
 #include "engine.h"
 
 void window_finish_frame(Window *window){
-  SDL_GL_SwapWindow(window->sdl_window_id);
+    SDL_GL_SwapWindow(window->sdl_window_id);
 }
 
 void window_vsync(bool flag){
-  if (SDL_GL_SetSwapInterval((int)flag) < 0) {
-    perror(SDL_GetError());
-  };
-  printf("Vsync set to: %i\n", flag);
+    if (SDL_GL_SetSwapInterval((int)flag) < 0) {
+        perror(SDL_GetError());
+    };
+    printf("Vsync set to: %i\n", flag);
 };
 
 void window_fullscreen(Window* window, bool flag){
-  SDL_SetWindowFullscreen(window->sdl_window_id, SDL_WINDOW_FULLSCREEN);
+    SDL_SetWindowFullscreen(window->sdl_window_id, SDL_WINDOW_FULLSCREEN);
 }
 
 /* disable the cursor too by sanity */
 void window_capture_cursor(bool flag){
-  if (flag) {
-    SDL_ShowCursor(SDL_DISABLE);
-    SDL_CaptureMouse(SDL_TRUE);
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
-  } else {
-    SDL_ShowCursor(SDL_ENABLE);
-    SDL_CaptureMouse(SDL_FALSE);
-    SDL_SetRelativeMouseMode(SDL_FALSE);
-    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "0");
-  }
+    if (flag) {
+        SDL_ShowCursor(SDL_DISABLE);
+        SDL_CaptureMouse(SDL_TRUE);
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
+    } else {
+        SDL_ShowCursor(SDL_ENABLE);
+        SDL_CaptureMouse(SDL_FALSE);
+        SDL_SetRelativeMouseMode(SDL_FALSE);
+        SDL_SetHint(SDL_HINT_IME_SHOW_UI, "0");
+    }
 }
 
 Window window_wake_up(char* name, int width, int height, bool fullscreen){

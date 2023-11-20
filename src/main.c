@@ -105,58 +105,58 @@ void update_player(Keys* keys, Player_t* player) {
     new_px = player->x + dx;
     new_py = player->y + dy;
 
-    #define H 32
-    #define BODY_AREA 4
+#define H 32
+#define BODY_AREA 4
     int o_mx = (int)(player->x / H);
     int o_my = (int)(player->y / H);
     int mx = (int)((player->x + (dx * BODY_AREA)) / H);
     int my = (int)((player->y + (dy * BODY_AREA)) / H);
 
     if (MAP[o_my][mx] == 0){
-      player->x = new_px;
+        player->x = new_px;
     }
     if (MAP[my][o_mx] == 0){
-      player->y = new_py;
+        player->y = new_py;
     }
 
     player->angle = normalize_rand(player->angle);
 }
 
 void update(AppGame *App, Keys* keys) {
-  update_player(keys, &App->Player);
+    update_player(keys, &App->Player);
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_action) {
     switch (keysym.sym) {
-        case SDLK_ESCAPE:
-            App->run_status = 0;
-            break;
-        case SDLK_a:
-            keys->a = button_action;
-            break;
-        case SDLK_d:
-            keys->d = button_action;
-            break;
-        case SDLK_w:
-            keys->w = button_action;
-            break;
-        case SDLK_s:
-            keys->s = button_action;
-            break;
-        case SDLK_LSHIFT:
-            keys->shift = button_action;
-            break;
-        case SDLK_j:
-            keys->j = button_action;
-            keys->k = 0;
-            break;
-        case SDLK_k:
-            keys->k = button_action;
-            keys->j = 0;
-            break;
-        case SDLK_LCTRL:
-            keys->ctrl = button_action;
-            break;
+    case SDLK_ESCAPE:
+        App->run_status = 0;
+        break;
+    case SDLK_a:
+        keys->a = button_action;
+        break;
+    case SDLK_d:
+        keys->d = button_action;
+        break;
+    case SDLK_w:
+        keys->w = button_action;
+        break;
+    case SDLK_s:
+        keys->s = button_action;
+        break;
+    case SDLK_LSHIFT:
+        keys->shift = button_action;
+        break;
+    case SDLK_j:
+        keys->j = button_action;
+        keys->k = 0;
+        break;
+    case SDLK_k:
+        keys->k = button_action;
+        keys->j = 0;
+        break;
+    case SDLK_LCTRL:
+        keys->ctrl = button_action;
+        break;
     }
 }
 
@@ -166,19 +166,19 @@ void draw_aim(Window *window) {
 
 void handle_mouse_pressed_up(int button, float x, float y, AppGame *App) {
     switch (button) {
-        case SDL_BUTTON_LEFT:
-            break;
-        case SDL_BUTTON_RIGHT:
-            break;
+    case SDL_BUTTON_LEFT:
+        break;
+    case SDL_BUTTON_RIGHT:
+        break;
     }
 }
 
 void handle_mouse_pressed_down(int button, float x, float y, AppGame *App) {
     switch (button) {
-        case SDL_BUTTON_LEFT:
-            break;
-        case SDL_BUTTON_RIGHT:
-            break;
+    case SDL_BUTTON_LEFT:
+        break;
+    case SDL_BUTTON_RIGHT:
+        break;
     }
 }
 
@@ -226,12 +226,12 @@ void draw_3d_view_port(AppGame *App, Window *win, Texture* t) {
             line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
             line_end   = line_start + line_h;
 
-            #define SHADOW_MAX 500.0
-            #define FAR 2.0
-            #define NEAR 0.1
+#define SHADOW_MAX 500.0
+#define FAR 2.0
+#define NEAR 0.1
             float dd = 1;
             if (distance_len < SHADOW_MAX){
-              dd = distance_len / SHADOW_MAX;
+                dd = distance_len / SHADOW_MAX;
             }
             float cp = (dd * (FAR - NEAR) + (FAR + NEAR)) / 2.0;
             float color = 255 - 255 * cp;
@@ -274,12 +274,12 @@ void handle_mouse_motion(AppGame* App, SDL_Event* event) {
     }
 
     switch (event->type) {
-        case SDL_MOUSEMOTION:
-            App->Player.pitch_view += (event->motion.yrel * 3);
-            App->Player.angle += MOUSE_VELOCITY * event->motion.xrel;
-            App->Player.direction_x = cos(App->Player.angle);
-            App->Player.direction_y = -sin(App->Player.angle);
-            break;
+    case SDL_MOUSEMOTION:
+        App->Player.pitch_view += (event->motion.yrel * 3);
+        App->Player.angle += MOUSE_VELOCITY * event->motion.xrel;
+        App->Player.direction_x = cos(App->Player.angle);
+        App->Player.direction_y = -sin(App->Player.angle);
+        break;
     }
 }
 
@@ -332,24 +332,24 @@ int main(int argc, char *args[]) {
         SDL_Event event;
         while (SDL_PollEvent(&event) != 0) {
             switch (event.type) {
-                case SDL_QUIT:
-                    App.run_status = 0;
-                    break;
-                case SDL_KEYDOWN:
-                    handle_key(event.key.keysym, &App, &keys_map, 1);
-                    break;
-                case SDL_KEYUP:
-                    handle_key(event.key.keysym, &App, &keys_map, 0);
-                    break;
-                case SDL_MOUSEMOTION:
-                  handle_mouse_motion(&App, &event);
-                    break;
-                case SDL_MOUSEBUTTONDOWN:
-                    handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
-                    break;
-                case SDL_MOUSEBUTTONUP:
-                    handle_mouse_pressed_up(event.button.button, event.button.x, event.button.y, &App);
-                    break;
+            case SDL_QUIT:
+                App.run_status = 0;
+                break;
+            case SDL_KEYDOWN:
+                handle_key(event.key.keysym, &App, &keys_map, 1);
+                break;
+            case SDL_KEYUP:
+                handle_key(event.key.keysym, &App, &keys_map, 0);
+                break;
+            case SDL_MOUSEMOTION:
+                handle_mouse_motion(&App, &event);
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
+                break;
+            case SDL_MOUSEBUTTONUP:
+                handle_mouse_pressed_up(event.button.button, event.button.x, event.button.y, &App);
+                break;
             }
         }
 
@@ -365,9 +365,9 @@ int main(int argc, char *args[]) {
             draw(&App, &window_deamon, textures);
 
             {
-              texture_bind(t9);
-              draw_rectf((Rectanglef){30, 30, 200, 200}, WHITE);
-              texture_unbind();
+                texture_bind(t9);
+                draw_rectf((Rectanglef){30, 30, 200, 200}, WHITE);
+                texture_unbind();
             }
 
             window_finish_frame(&window_deamon);
