@@ -50,6 +50,7 @@ Window window_wake_up(char* name, int height, int width, bool fullscreen);
 void window_vsync(bool flag);
 void window_fullscreen(Window* window, bool flag);
 void window_capture_cursor(bool flag);
+void window_start_frame();
 void window_finish_frame(Window *window);
 void window_shutdown(Window *window);
 

@@ -149,3 +149,8 @@ void draw_line_vertical(float posX, float posY, float posY_end, int texture_id, 
     glEnd();
     glDisable(GL_TEXTURE_2D); // TODO remove this after bind use in code
 }
+
+void window_start_frame() {
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}

@@ -1,4 +1,3 @@
-#include <GL/gl.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
@@ -10,7 +9,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <dirent.h>
-#include <GL/gl.h>
 
 // internal
 #include "engine.h"
@@ -287,6 +285,7 @@ int main(int argc, char* args[]) {
     const double frame_delta   = 1000.0 / App.fps;
 
     while (App.run_status) {
+        window_start_frame();
         Uint64 current_time = SDL_GetPerformanceCounter();
         double delta        = (current_time - last_time) / freq_ms * 1000.0;
         if (current_time > frame_timer + freq_ms) {
@@ -321,10 +320,6 @@ int main(int argc, char* args[]) {
         }
 
         if (delta > frame_delta) {
-            /* clear screen */
-            glClearColor(.0f, .0f, .0f, .0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             /* update here */
             update_player(&keys_map, &App.Player, grid);
 
@@ -336,7 +331,6 @@ int main(int argc, char* args[]) {
                 draw_rectf((Rectanglef){30, 30, 200, 200}, WHITE);
                 texture_unbind();
             }
-
             window_finish_frame(&window_deamon);
 
             last_time = current_time;
