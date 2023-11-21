@@ -28,15 +28,16 @@ Texture texture_new(char* path, bool repeat) {
     return t;
 };
 
-void texture_bind(Texture t){
+void texture_bind(Texture t) {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, t.id);
 }
 
-void texture_unbind(){
+void texture_unbind() {
     glDisable(GL_TEXTURE_2D);
 }
 
-void texture_free(Texture* t){
-    stbi_image_free(t->data);
+void texture_free(Texture* t) {
+    free(t->data);
+    glDeleteTextures(1, &t->id);
 }
