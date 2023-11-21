@@ -11,7 +11,7 @@
 Grid grid_new(size_t rows, size_t cols) {
     Cel** c = (Cel**)calloc(rows, sizeof(Cel*));
     for (int i = 0; i < rows; i++) {
-	c[i] = (Cel*)calloc(cols, sizeof(Cel));
+        c[i] = (Cel*)calloc(cols, sizeof(Cel));
     }
     Grid g = {c, rows, cols};
     return g;
@@ -21,35 +21,21 @@ void grid_update_size(Grid* grid, size_t rows, size_t cols) {
     return;
 }
 
-void grid_push(Grid grid, int linear_index, Cel cel) {
-    int row, col;
-    row = (linear_index / grid.rows);
-    col = (linear_index % grid.cols);
-
+void grid_push(Grid grid, size_t row, size_t col, Cel cel) {
     if (grid_index_valid(grid, row, col)) {
-	grid.cels[row][col] = cel;
+        grid.cels[row][col] = cel;
     } else {
-	printf("[ERROR] Grid push invalid: %i %i - linear_index %i\n", row, col, linear_index);
-	exit(EXIT_FAILURE);
+        printf("[ERROR] Grid push invalid: %lo %lo\n", row, col);
+        exit(EXIT_FAILURE);
     }
 }
-
-void grid_push_axis(Grid grid, int col, int row, Cel cel) {
-    if (grid_index_valid(grid, row, col)) {
-	grid.cels[row][col] = cel;
-    } else {
-	printf("[ERROR] Grid push invalid: %i %i\n", row, col);
-	exit(EXIT_FAILURE);
-    }
-}
-
 
 bool grid_index_valid(Grid grid, int row, int col) {
     if ((row < 0) || (col < 0)) {
-	return false;
+        return false;
     }
     if ((row >= grid.rows) || (col >= grid.cols)) {
-	return false;
+        return false;
     }
     return true;
 }
@@ -64,24 +50,24 @@ Grid grid_load(char* path) {
 
     f = fopen(path, FILE_READ);
     if (!f) {
-	printf("[ERROR] Cound not open the file map: %s", path);
+        printf("[ERROR] Cound not open the file map: %s", path);
     }
 
-    char c = 0;
+    char   c    = 0;
     size_t rows = 0, cols = 0;
     Grid   grid = grid_new(BUFFER_SIZE, BUFFER_SIZE);
     do {
-	c = (char)fgetc(f);
-	if ((c != SPACE) && (c != NEW_LINE)) {
-	    grid_push_axis(grid, cols, rows, (Cel){atoi(&c)});
-	    cols++;
-	    printf("%c ", c);
-	}
-	if (c == NEW_LINE) {
-	    cols = 0;
-	    rows++;
-	    printf("\n");
-	}
+        c = (char)fgetc(f);
+        if ((c != SPACE) && (c != NEW_LINE)) {
+            grid_push(grid, rows, cols, (Cel){atoi(&c)});
+            cols++;
+            printf("%c ", c);
+        }
+        if (c == NEW_LINE) {
+            cols = 0;
+            rows++;
+            printf("\n");
+        }
     } while (c != EOF);
 
     fclose(f);

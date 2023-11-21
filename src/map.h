@@ -17,8 +17,7 @@ struct Grid {
 };
 
 void grid_update_size(Grid* grid, size_t rows, size_t cols);
-void grid_push(Grid grid, int linear_index, Cel cel);
-void grid_push_axis(Grid grid, int col, int row, Cel cel);
+void grid_push(Grid grid, size_t col, size_t row, Cel cel);
 Grid grid_new(size_t rows, size_t cols);
 Grid grid_load(char* path);
 int grid_area(Grid grid);
