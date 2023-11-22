@@ -31,7 +31,7 @@ float point2f_len(Point2f point) {
     return sqrtf(point.x * point.x + point.y * point.y);
 }
 
-float degree_to_rad(float degree) {
+float to_radf(float degree) {
     return degree * ONE_RAD;
 }
 

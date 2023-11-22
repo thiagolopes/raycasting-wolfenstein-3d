@@ -23,6 +23,7 @@
 // #include "external/imgui/imgui.h"
 
 #define MOUSE_VELOCITY 0.002909
+bool SHADOWS = true;
 
 typedef struct {
     double angle, direction_x, direction_y;
@@ -69,10 +70,9 @@ void update_player(Keys* keys, Player_t* player, Grid grid) {
         dy -= player->direction_y * magntude;
     }
     if (keys->j == 1) {
-        player->fov -= 1;
     }
     if (keys->k == 1) {
-        player->fov += 1;
+        SHADOWS = !SHADOWS;
     }
 
     new_px = player->x + dx;
@@ -157,8 +157,8 @@ void draw_3d_view_port(AppGame* App, Window* win, Texture* t) {
     int(*map)[24]      = App->map_tile;
     int   pitch        = App->Player.pitch_view; /* player look up or down */
     float player_angle = App->Player.angle;
-    float fov_in_rad   = degree_to_rad(App->Player.fov);
-    float hfov_in_rad  = degree_to_rad(App->Player.fov / 2);
+    float fov_in_rad   = to_radf(App->Player.fov);
+    float hfov_in_rad  = to_radf(App->Player.fov / 2);
     float pixel_in_rad = fov_in_rad / pixels_cols;
 
     Point2f point_start = {App->Player.x, App->Player.y};
@@ -193,13 +193,17 @@ void draw_3d_view_port(AppGame* App, Window* win, Texture* t) {
             line_start = (draw_screen_h / 2 - line_h / 2) - pitch;
             line_end   = line_start + line_h;
 
-            #define SHADOW_MAX 500.0
-            #define NEAR 0.1
-            #define FAR 0.70
-            float dd = distance_len / SHADOW_MAX;
-            float cp = 1.0 - exp(-dd * dd / (FAR * NEAR));
-
-            float color  = 255 - 255 * cp;
+            float color;
+            if (SHADOWS){
+                #define SHADOW_MAX 500.0
+                #define NEAR 0.1
+                #define FAR 0.70
+                float dd = distance_len / SHADOW_MAX;
+                float cp = 1.0 - exp(-dd * dd / (FAR * NEAR));
+                color    = 255 - 255 * cp;
+            } else {
+                color = 255;
+            }
             draw_color.r = color;
             draw_color.g = color;
             draw_color.b = color;
@@ -258,7 +262,7 @@ int main(int argc, char* args[]) {
     Window window_deamon = window_wake_up(title, 1920, 1080, false);
     Keys   keys_map      = {0};
     Mouse  mouse         = {0};
-    window_vsync(true);
+    window_vsync(false);
     window_capture_cursor(true);
 
     Texture  t1          = texture_new("textures/brick_white.png", false);
@@ -319,7 +323,7 @@ int main(int argc, char* args[]) {
             }
         }
 
-        if (delta > frame_delta) {
+        /* if (delta > frame_delta) { */
             /* update here */
             update_player(&keys_map, &App.Player, grid);
 
@@ -335,7 +339,7 @@ int main(int argc, char* args[]) {
 
             last_time = current_time;
             ++frame_counter;
-        }
+        /* } */
     }
 
     /* shutdown */
