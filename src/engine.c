@@ -103,8 +103,8 @@ void draw_rectf_gradient(Rectanglef r, Color c_top, Color c_bottom ){
 }
 
 void draw_rectf(Rectanglef r, Color c){
-    glColor4ub(c.r, c.g, c.b, c.a);
     glBegin(GL_QUADS);
+    glColor4ub(c.r, c.g, c.b, c.a);
 
     glTexCoord2d(0.0, 1.0);
     glVertex2i(r.x, r.y);
