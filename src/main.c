@@ -347,14 +347,14 @@ int main(int argc, char* args[]) {
     window_vsync(false);
     window_capture_cursor(true);
 
-    Texture  t1          = texture_new("textures/brick_white.png", false);
-    Texture  t2          = texture_new("textures/wall.png", false);
-    Texture  t3          = texture_new("textures/facility.png", false);
-    Texture  t4          = texture_new("textures/grass.png", false);
-    Texture  t5          = texture_new("textures/hack_1.png", false);
-    Texture  t6          = texture_new("textures/hack_2.png", false);
-    Texture  t7          = texture_new("textures/console.png", false);
-    Texture  t8          = texture_new("textures/wall_damage_c.png", false);
+    Texture  t1          = texture_new("textures/doom/1.png", false);
+    Texture  t2          = texture_new("textures/doom/2.png", false);
+    Texture  t3          = texture_new("textures/doom/3.png", false);
+    Texture  t4          = texture_new("textures/doom/4.png", false);
+    Texture  t5          = texture_new("textures/doom/5.png", false);
+    Texture  t6          = texture_new("textures/doom/6.png", false);
+    Texture  t7          = texture_new("textures/doom/7.png", false);
+    Texture  t8          = texture_new("textures/doom/8.png", false);
     Texture  t9          = texture_new("textures/test.png", false);
     Texture* textures[9] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9};
     // TODO tab enable select texture
