@@ -20,12 +20,7 @@
 #include "colors.h"
 #include "dda.c"
 #include "map.h"
-/* #include "algorithm.h" */
-
-// imgui
-// #include "external/imgui/backends/imgui_impl_opengl3.h"
-// #include "external/imgui/backends/imgui_impl_sdl2.h"
-// #include "external/imgui/imgui.h"
+#include "algorithm.h"
 
 #define MOUSE_VELOCITY 0.002909
 bool SHADOWS = true;
@@ -63,38 +58,35 @@ typedef struct {
 } AppGame;
 
 void update_player(Keys* keys, Player_t* player, Grid grid, float deltatime) {
-    double moveSpeed = ONE_RAD / 4 * deltatime;
-    double rotSpeed = ONE_RAD / 4 * deltatime;
+    double move_speed = ONE_RAD / 4 * deltatime;
+    double rot_speed = ONE_RAD / 4 * deltatime;
 
-    /* update angle to use a const * delta frame */
-
-    /* FIX TO USE THE RELATIVE X/Y REF BASED ON THE PLAYER VIEW */
-    if (keys->d == 1) { // right
+    if (keys->d == 1) {
         double old_dir_x = PLAYER.dir.x;
-        PLAYER.dir.x = PLAYER.dir.x * cos(-rotSpeed) - PLAYER.dir.y * sin(-rotSpeed);
-        PLAYER.dir.y = old_dir_x * sin(-rotSpeed) + PLAYER.dir.y * cos(-rotSpeed);
+        PLAYER.dir.x = PLAYER.dir.x * cos(-rot_speed) - PLAYER.dir.y * sin(-rot_speed);
+        PLAYER.dir.y = old_dir_x * sin(-rot_speed) + PLAYER.dir.y * cos(-rot_speed);
 
         double old_plane_x = PLAYER.plane.x;
-        PLAYER.plane.x = PLAYER.plane.x * cos(-rotSpeed) - PLAYER.plane.y * sin(-rotSpeed);
-        PLAYER.plane.y = old_plane_x * sin(-rotSpeed) + PLAYER.plane.y * cos(-rotSpeed);
+        PLAYER.plane.x = PLAYER.plane.x * cos(-rot_speed) - PLAYER.plane.y * sin(-rot_speed);
+        PLAYER.plane.y = old_plane_x * sin(-rot_speed) + PLAYER.plane.y * cos(-rot_speed);
     }
     if (keys->a == 1) {
         double old_dir_x = PLAYER.dir.x;
         //TODO this math is a matrix rotation; move to math
-        PLAYER.dir.x = PLAYER.dir.x * cos(rotSpeed) - PLAYER.dir.y * sin(rotSpeed);
-        PLAYER.dir.y = old_dir_x * sin(rotSpeed) + PLAYER.dir.y * cos(rotSpeed);
+        PLAYER.dir.x = PLAYER.dir.x * cos(rot_speed) - PLAYER.dir.y * sin(rot_speed);
+        PLAYER.dir.y = old_dir_x * sin(rot_speed) + PLAYER.dir.y * cos(rot_speed);
 
         double old_plane_x = PLAYER.plane.x;
-        PLAYER.plane.x = PLAYER.plane.x * cos(rotSpeed) - PLAYER.plane.y * sin(rotSpeed);
-        PLAYER.plane.y = old_plane_x * sin(rotSpeed) + PLAYER.plane.y * cos(rotSpeed);
+        PLAYER.plane.x = PLAYER.plane.x * cos(rot_speed) - PLAYER.plane.y * sin(rot_speed);
+        PLAYER.plane.y = old_plane_x * sin(rot_speed) + PLAYER.plane.y * cos(rot_speed);
     }
     if (keys->w == 1) {
-        PLAYER.pos.x += PLAYER.dir.x * moveSpeed;
-        PLAYER.pos.y += PLAYER.dir.y * moveSpeed;
+        PLAYER.pos.x += PLAYER.dir.x * move_speed;
+        PLAYER.pos.y += PLAYER.dir.y * move_speed;
     }
     if (keys->s == 1) {
-        PLAYER.pos.x -= PLAYER.dir.x * moveSpeed;
-        PLAYER.pos.y -= PLAYER.dir.y * moveSpeed;
+        PLAYER.pos.x -= PLAYER.dir.x * move_speed;
+        PLAYER.pos.y -= PLAYER.dir.y * move_speed;
     }
     if (keys->j == 1) {
     }
@@ -155,15 +147,6 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame* App) {
     }
 }
 
-#define SHADOW_MAX 25
-#define NEAR 0.1
-#define FAR 0.70
-double height_shadow(double ray_dist){
-    double s_force = ray_dist / SHADOW_MAX;
-    double s_normalized = exp(-s_force * s_force / (FAR * NEAR));
-    return (double)255 * s_normalized;
-}
-
 
 #define w 1920
 #define h 1080
@@ -183,86 +166,6 @@ void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos) {
 
     double color = height_shadow(ray_dist);
     draw_line_vertical(x_pos, draw_start, draw_end, cel.raw_value, text_x, (Color){color, color, color});
-};
-
-
-typedef struct {
-    CardinalDir side;
-    // what direction to step in x or y-direction (either +1 or -1)
-    Point2i step;
-    // which box of the map ray are in
-    Point2i map_grid;
-    // length of ray from current position to next x or y-side
-    Point2h side_dist;
-    // length of ray from one x or y-side to next x or y-side
-    Point2h delta_dist;
-} Ray;
-
-// calculate step and initial side
-// set steps base on direction growth on the grid;
-// setup Ray->step and Ray->side_dist
-void ray_setup_step(Point2h pos, Point2h dir, Ray* ray) {
-    // is left
-    if (dir.x < 0) {
-        ray->step.x      = -1;
-        ray->side_dist.x = (pos.x - ray->map_grid.x) * ray->delta_dist.x;
-    }
-    // is right
-    else {
-        ray->step.x      = 1;
-        ray->side_dist.x = (ray->map_grid.x + 1.0 - pos.x) * ray->delta_dist.x;
-    }
-
-    if (dir.y < 0) {
-        ray->step.y      = -1;
-        ray->side_dist.y = (pos.y - ray->map_grid.y) * ray->delta_dist.y;
-    } else {
-        ray->step.y      = 1;
-        ray->side_dist.y = (ray->map_grid.y + 1.0 - pos.y) * ray->delta_dist.y;
-    }
-}
-
-
-
-// walk ray to the next x and y map grid;
-void ray_next_step(Ray* ray){
-    // jump to next map square, either in x-direction, or in y-direction
-    if (ray->side_dist.x < ray->side_dist.y) {
-        ray->side_dist.x += ray->delta_dist.x;
-        ray->map_grid.x += ray->step.x;
-        ray->side = NS;
-    } else {
-        ray->side_dist.y += ray->delta_dist.y;
-        ray->map_grid.y += ray->step.y;
-        ray->side = WE;
-    }
-};
-
-Ray ray_setup(Point2h pos, Point2h ray_dir) {
-    Ray ray = {0};
-    ray.map_grid = (Point2i){(int)pos.x, (int)pos.y};
-    ray.delta_dist = (Point2h){fabs(1 / ray_dir.x), fabs(1 / ray_dir.y)};
-
-    // is left
-    if (ray_dir.x < 0) {
-        ray.step.x      = -1;
-        ray.side_dist.x = (pos.x - ray.map_grid.x) * ray.delta_dist.x;
-    }
-    // is right
-    else {
-        ray.step.x      = 1;
-        ray.side_dist.x = (ray.map_grid.x + 1.0 - pos.x) * ray.delta_dist.x;
-    }
-
-    if (ray_dir.y < 0) {
-        ray.step.y      = -1;
-        ray.side_dist.y = (pos.y - ray.map_grid.y) * ray.delta_dist.y;
-    } else {
-        ray.step.y      = 1;
-        ray.side_dist.y = (ray.map_grid.y + 1.0 - pos.y) * ray.delta_dist.y;
-    }
-
-    return ray;
 };
 
 void new_3d_render(AppGame* app, Grid* map){
@@ -303,11 +206,6 @@ void draw_3d_view_floor(AppGame* App, Window* win) {
     float      floor_start = win->height / 2;
     Rectanglef floor       = {0, floor_start, (float)win->width, (float)win->height + App->Player.pitch_view};
     draw_rectf_gradient(floor, BLACK, DARKGRAY);
-}
-
-void draw(AppGame* App, Window* win, Grid* grid) {
-    draw_3d_view_floor(App, win);
-    draw_aim(win);
 }
 
 void handle_mouse_motion(AppGame* App, SDL_Event* event) {
@@ -403,7 +301,7 @@ int main(int argc, char* args[]) {
             update_player(&keys_map, &App.Player, grid, delta);
 
             /* draw here */
-            draw(&App, &window_deamon, &grid);
+            draw_3d_view_floor(&App, &window_deamon);
             new_3d_render(&App, &grid);
 
             {
@@ -415,8 +313,12 @@ int main(int argc, char* args[]) {
 
             last_time = current_time;
             ++frame_counter;
-        /* if (delta > frame_delta) { */
-        /* } */
+
+        if (delta > frame_delta) {
+            // here in capped by fps
+            /* last_time = current_time; */
+            /* ++frame_counter; */
+        }
     }
 
     /* shutdown */
