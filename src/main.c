@@ -18,7 +18,6 @@
 #include "engine.h"
 #include "texture.h"
 #include "colors.h"
-#include "dda.c"
 #include "map.h"
 #include "algorithm.h"
 
