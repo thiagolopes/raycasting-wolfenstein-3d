@@ -6,6 +6,7 @@
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_opengl.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -41,6 +42,12 @@ typedef struct {
     Point2h plane; // the 2d raycaster version of camera plane
 } Player;
 Player PLAYER = {{22.0, 12}, {-1.0, 0.0}, {0.0, 0.66}};
+
+//x-coordinate in camera space
+double camera_position(size_t x, size_t width){
+    double position = 2 * x / (double)width - 1;
+    return position;
+}
 
 typedef struct {
     int      run_status;
@@ -148,57 +155,6 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame* App) {
     }
 }
 
-
-typedef struct {
-    //length of ray from current position to next x or y-side
-    Point2h side_dist;
-    //what direction to step in x or y-direction (either +1 or -1)
-    Point2i step;
-} Ray_step;
-
-//calculate step and initial side
-Ray_step ray_create_step(Point2h pos, Point2h dir, Point2i grid, Point2h delta_dist){
-    Point2h side_dist;
-    Point2i step;
-
-    // set steps base on direction growth on the grid;
-    if (dir.x < 0) {
-            step.x = -1;
-            side_dist.x = (pos.x - grid.x) * delta_dist.x;
-    }
-    else {
-            step.x = 1;
-            side_dist.x = (grid.x + 1.0 - pos.x) * delta_dist.x;
-    }
-    // is left
-    if (dir.y < 0) {
-        step.y = -1;
-        side_dist.y = (pos.y - grid.y) * delta_dist.y;
-    }
-    // is right
-    else {
-        step.y = 1;
-        side_dist.y = (grid.y + 1.0 - pos.y) * delta_dist.y;
-    }
-
-    Ray_step ray_step = {side_dist, step};
-    return ray_step;
-}
-
-// walk ray to the next x and y map grid;
-void ray_next_step_on(Point2h delta_dist, Point2i step, Point2h* side_dist, Point2i* map_grid, int* side) {
-    // jump to next map square, either in x-direction, or in y-direction
-    if (side_dist->x < side_dist->y) {
-        side_dist->x += delta_dist.x;
-        map_grid->x += step.x;
-        *side = 0;
-    } else {
-        side_dist->y += delta_dist.y;
-        map_grid->y += step.y;
-        *side = 1;
-    }
-};
-
 #define SHADOW_MAX 25
 #define NEAR 0.1
 #define FAR 0.70
@@ -228,61 +184,118 @@ void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos) {
     draw_line_vertical(x_pos, draw_start, draw_end, cel.raw_value, text_x, (Color){color, color, color});
 };
 
+typedef struct {
+    // length of ray from current position to next x or y-side
+    Point2h side_dist;
+    // what direction to step in x or y-direction (either +1 or -1)
+    Point2i step;
+
+    // which box of the map ray are in
+    Point2i map_grid;
+    // length of ray from one x or y-side to next x or y-side
+    Point2h delta_dist;
+    // was a NS or a EW wall hit?
+    int side;
+} Ray;
+
+// calculate step and initial side
+// set steps base on direction growth on the grid;
+// setup Ray->step and Ray->side_dist
+void ray_setup_step(Point2h pos, Point2h dir, Ray* ray) {
+    // is left
+    if (dir.x < 0) {
+        ray->step.x      = -1;
+        ray->side_dist.x = (pos.x - ray->map_grid.x) * ray->delta_dist.x;
+    }
+    // is right
+    else {
+        ray->step.x      = 1;
+        ray->side_dist.x = (ray->map_grid.x + 1.0 - pos.x) * ray->delta_dist.x;
+    }
+
+    if (dir.y < 0) {
+        ray->step.y      = -1;
+        ray->side_dist.y = (pos.y - ray->map_grid.y) * ray->delta_dist.y;
+    } else {
+        ray->step.y      = 1;
+        ray->side_dist.y = (ray->map_grid.y + 1.0 - pos.y) * ray->delta_dist.y;
+    }
+}
+
+
+
+// walk ray to the next x and y map grid;
+void ray_next_step(Ray* ray){
+    // jump to next map square, either in x-direction, or in y-direction
+    if (ray->side_dist.x < ray->side_dist.y) {
+        ray->side_dist.x += ray->delta_dist.x;
+        ray->map_grid.x += ray->step.x;
+        ray->side = 0;
+    } else {
+        ray->side_dist.y += ray->delta_dist.y;
+        ray->map_grid.y += ray->step.y;
+        ray->side = 1;
+    }
+};
+
+Ray ray_setup(Point2h pos, Point2h ray_dir) {
+    Ray ray = {0};
+    ray.map_grid = (Point2i){(int)pos.x, (int)pos.y};
+    ray.delta_dist = (Point2h){fabs(1 / ray_dir.x), fabs(1 / ray_dir.y)};
+
+    // is left
+    if (ray_dir.x < 0) {
+        ray.step.x      = -1;
+        ray.side_dist.x = (pos.x - ray.map_grid.x) * ray.delta_dist.x;
+    }
+    // is right
+    else {
+        ray.step.x      = 1;
+        ray.side_dist.x = (ray.map_grid.x + 1.0 - pos.x) * ray.delta_dist.x;
+    }
+
+    if (ray_dir.y < 0) {
+        ray.step.y      = -1;
+        ray.side_dist.y = (pos.y - ray.map_grid.y) * ray.delta_dist.y;
+    } else {
+        ray.step.y      = 1;
+        ray.side_dist.y = (ray.map_grid.y + 1.0 - pos.y) * ray.delta_dist.y;
+    }
+
+    return ray;
+};
+
 void new_3d_render(AppGame* app, Grid* map){
     Player r = PLAYER;
 
     for(size_t x = 0; x < w; x++){
-        //x-coordinate in camera space
-        double camera_pos = 2 * x / (double)w - 1;
+        double camera_pos = camera_position(x, w);
         //calculate ray position and direction
         Point2h ray_dir = {r.dir.x + r.plane.x * camera_pos, r.dir.y + r.plane.y * camera_pos};
-        //which box of the map ray are in
-        Point2i map_grid = {(int)r.pos.x, (int)r.pos.y};
-        //length of ray from one x or y-side to next x or y-side
-        Point2h delta_dist = {fabs(1 / ray_dir.x), fabs(1 / ray_dir.y)};
         //lenght of the ray while steps;
         double ray_dist;
-
-        bool hit = false; //was there a wall hit?
-        int side; //was a NS or a EW wall hit?
-
-        Ray_step s = ray_create_step(PLAYER.pos, ray_dir, map_grid, delta_dist);
-        Point2i step = s.step;
-        Point2h side_dist = s.side_dist;
-
-        if (ray_dir.x < 0) {
-            step.x = -1;
-            side_dist.x = (r.pos.x - map_grid.x) * delta_dist.x;
-        } else {
-            step.x = 1;
-            side_dist.x = (map_grid.x + 1.0 - r.pos.x) * delta_dist.x;
-        }
-        if (ray_dir.y < 0) {
-            step.y = -1;
-            side_dist.y = (r.pos.y - map_grid.y) * delta_dist.y;
-        } else {
-            step.y = 1;
-            side_dist.y = (map_grid.y + 1.0 - r.pos.y) * delta_dist.y;
-        }
-
+        // raycaster
+        Ray ray = ray_setup(PLAYER.pos, ray_dir);
+        // was there a wall hit?
+        bool hit = false;
         while(!hit){
-            ray_next_step_on(delta_dist, step, &side_dist, &map_grid, &side);
-            if (grid_index_valid(*map, map_grid.x, map_grid.y)){
-                if (map->cels[map_grid.x][map_grid.y].raw_value != 0) {
+            ray_next_step(&ray);
+            if (grid_index_valid(*map, ray.map_grid.x, ray.map_grid.y)){
+                if (map->cels[ray.map_grid.x][ray.map_grid.y].raw_value != 0) {
                     hit = true;
                 }
             }
         }
 
         // camera plane dist
-        if(side == 0){
-            ray_dist = (side_dist.x - delta_dist.x);
+        if(ray.side == 0){
+            ray_dist = (ray.side_dist.x - ray.delta_dist.x);
         }
         else{
-            ray_dist = (side_dist.y - delta_dist.y);
+            ray_dist = (ray.side_dist.y - ray.delta_dist.y);
         }
         // move to draw_ray
-        draw_ray(ray_dist, side, ray_dir, map->cels[map_grid.x][map_grid.y], x);
+        draw_ray(ray_dist, ray.side, ray_dir, map->cels[ray.map_grid.x][ray.map_grid.y], x);
     }
 }
 
