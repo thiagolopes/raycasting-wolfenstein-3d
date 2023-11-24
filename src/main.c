@@ -94,19 +94,6 @@ void update_player(Keys* keys, Player_t* player, Grid grid, float deltatime) {
     if (keys->k == 1) {
         SHADOWS = !SHADOWS;
     }
-/* #define H 32 */
-/* #define BODY_AREA 4 */
-/*     int o_mx = (int)(player->x / H); */
-/*     int o_my = (int)(player->y / H); */
-/*     int mx   = (int)((player->x + (dx * BODY_AREA)) / H); */
-/*     int my   = (int)((player->y + (dy * BODY_AREA)) / H); */
-
-/*     if (grid.cels[o_my][mx].raw_value == 0) { */
-/*         player->x = new_px; */
-/*     } */
-/*     if (grid.cels[my][o_mx].raw_value == 0) { */
-/*         player->y = new_py; */
-/*     } */
 }
 
 static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_action) {
@@ -212,16 +199,37 @@ void ray_next_step_on(Point2h delta_dist, Point2i step, Point2h* side_dist, Poin
     }
 };
 
+#define SHADOW_MAX 25
+#define NEAR 0.1
+#define FAR 0.70
+double height_shadow(double ray_dist){
+    double s_force = ray_dist / SHADOW_MAX;
+    double s_normalized = exp(-s_force * s_force / (FAR * NEAR));
+    return (double)255 * s_normalized;
+}
 
-void draw_ray(){
+#define w 1920
+#define h 1080
+void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos) {
+    // Calculate height of line to draw on screen
+    int wall_height = (int)(h / ray_dist);
+    // calculate where the line start and ends, talken h as center of hall;
+    int draw_start = -wall_height / 2 + h / 2;
+    int draw_end   = wall_height / 2 + h / 2;
 
+    double text_x;
+    if (side == 0)
+        text_x = 1 - (PLAYER.pos.y + ray_dist * ray_dir.y);
+    else
+        text_x = 1 - (PLAYER.pos.x + ray_dist * ray_dir.x);
+    text_x -= floor(text_x);
+
+    double color = height_shadow(ray_dist);
+    draw_line_vertical(x_pos, draw_start, draw_end, cel.raw_value, text_x, (Color){color, color, color});
 };
 
 void new_3d_render(AppGame* app, Grid* map){
     Player r = PLAYER;
-    #define w 1920
-    #define h 1080
-
 
     for(size_t x = 0; x < w; x++){
         //x-coordinate in camera space
@@ -274,35 +282,7 @@ void new_3d_render(AppGame* app, Grid* map){
             ray_dist = (side_dist.y - delta_dist.y);
         }
         // move to draw_ray
-        //Calculate height of line to draw on screen
-        int wall_height = (int)(h / ray_dist);
-        // calculate where the line start and ends, talken h as center of hall;
-        int draw_start = -wall_height / 2 + h / 2;
-        int draw_end = wall_height / 2 + h / 2;
-        /* if (draw_start < 0) */
-            /* draw_start = 0; */
-        /* if (draw_end >= h) */
-            /* draw_end = h - 1; */
-
-      double wall_x;
-      if (side == 0)
-          wall_x = PLAYER.pos.y + ray_dist * ray_dir.y;
-      else
-          wall_x = PLAYER.pos.x + ray_dist * ray_dir.x;
-      wall_x -= floor((wall_x));
-
-      #define SHADOW_MAX 25
-      #define NEAR 0.1
-      #define FAR 0.70
-      Color   draw_color = {0};
-      float dd = ray_dist / SHADOW_MAX;
-      float cp = 1.0 - exp(-dd * dd / (FAR * NEAR));
-      float color  = 255 - 255 * cp;
-      draw_color.r = color;
-      draw_color.g = color;
-      draw_color.b = color;
-
-      draw_line_vertical(x, draw_start, draw_end, map->cels[map_grid.x][map_grid.y].raw_value, wall_x, draw_color);
+        draw_ray(ray_dist, side, ray_dir, map->cels[map_grid.x][map_grid.y], x);
     }
 }
 
