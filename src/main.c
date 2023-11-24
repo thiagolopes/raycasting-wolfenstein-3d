@@ -164,6 +164,7 @@ double height_shadow(double ray_dist){
     return (double)255 * s_normalized;
 }
 
+
 #define w 1920
 #define h 1080
 void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos) {
@@ -174,7 +175,7 @@ void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos) {
     int draw_end   = wall_height / 2 + h / 2;
 
     double text_x;
-    if (side == 0)
+    if (side == NS)
         text_x = 1 - (PLAYER.pos.y + ray_dist * ray_dir.y);
     else
         text_x = 1 - (PLAYER.pos.x + ray_dist * ray_dir.x);
@@ -184,18 +185,17 @@ void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos) {
     draw_line_vertical(x_pos, draw_start, draw_end, cel.raw_value, text_x, (Color){color, color, color});
 };
 
+
 typedef struct {
-    // length of ray from current position to next x or y-side
-    Point2h side_dist;
+    CardinalDir side;
     // what direction to step in x or y-direction (either +1 or -1)
     Point2i step;
-
     // which box of the map ray are in
     Point2i map_grid;
+    // length of ray from current position to next x or y-side
+    Point2h side_dist;
     // length of ray from one x or y-side to next x or y-side
     Point2h delta_dist;
-    // was a NS or a EW wall hit?
-    int side;
 } Ray;
 
 // calculate step and initial side
@@ -230,11 +230,11 @@ void ray_next_step(Ray* ray){
     if (ray->side_dist.x < ray->side_dist.y) {
         ray->side_dist.x += ray->delta_dist.x;
         ray->map_grid.x += ray->step.x;
-        ray->side = 0;
+        ray->side = NS;
     } else {
         ray->side_dist.y += ray->delta_dist.y;
         ray->map_grid.y += ray->step.y;
-        ray->side = 1;
+        ray->side = WE;
     }
 };
 
@@ -288,7 +288,7 @@ void new_3d_render(AppGame* app, Grid* map){
         }
 
         // camera plane dist
-        if(ray.side == 0){
+        if(ray.side == NS){
             ray_dist = (ray.side_dist.x - ray.delta_dist.x);
         }
         else{

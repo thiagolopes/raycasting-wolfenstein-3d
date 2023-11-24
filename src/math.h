@@ -21,6 +21,11 @@ struct Point2h {
     double y;
 };
 
+// The four cardinal directions are the four main directions: north, south, east, and west;
+typedef enum {
+    NS,
+    WE,
+} CardinalDir;
 
 Point2i point2i_normalize(Point2i point);
 Point2f point2f_normalize(Point2f point);
