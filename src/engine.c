@@ -133,7 +133,7 @@ void draw_line(Point2f p1, Point2f p2, float texture_offset, Color color){
     glEnd();
 }
 
-void draw_line_vertical(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color){
+void draw_line_vertical(double posX, double posY, double posY_end, int texture_id, double texture_offset, Color color){
     glColor4ub(color.r, color.g, color.b, color.a);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texture_id);

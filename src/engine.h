@@ -16,35 +16,30 @@ struct Window {
     bool fullscreen;
 };
 
-typedef struct Renderer Renderer;
-struct Renderer {
-};
+typedef struct {
+} Renderer;
 
-typedef struct Keys Keys;
-struct Keys {
+typedef struct{
     int a, w, s, d, shift, ctrl, j, k;
-};
+} Keys;
 
-typedef struct Mouse Mouse;
-struct Mouse {
+typedef struct{
     float x, y, xref, yref, button_r, button_l;
-};
+} Mouse;
 
-typedef struct Color Color;
-struct Color {
+typedef struct {
     unsigned char r;
     unsigned char g;
     unsigned char b;
     unsigned char a;
-};
+} Color;
 
-typedef struct Rectanglef Rectanglef;
-struct Rectanglef {
+typedef struct {
     float x;
     float y;
     float width;
     float height;
-};
+}Rectanglef;
 
 Window window_wake_up(char* name, int height, int width, bool fullscreen);
 void window_vsync(bool flag);
@@ -58,4 +53,4 @@ void window_shutdown(Window *window);
 void draw_rectf(Rectanglef rect, Color color);
 void draw_rectf_gradient(Rectanglef r, Color c_top, Color c_bottom);
 void draw_line(Point2f p1, Point2f p2, float texture_offset, Color color);
-void draw_line_vertical(float posX, float posY, float posY_end, int texture_id, float texture_offset, Color color);
+void draw_line_vertical(double posX, double posY, double posY_end, int texture_id, double texture_offset, Color color);
