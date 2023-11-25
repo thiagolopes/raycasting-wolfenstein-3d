@@ -25,5 +25,6 @@ void ray_setup_step(Point2h pos, Point2h dir, Ray* ray);
 // walk ray to the next x and y map grid;
 void ray_next_step(Ray* ray);
 Ray ray_setup(Point2h pos, Point2h ray_dir);
+double ray_get_dist(Ray* ray);
 
 double height_shadow(double ray_dist);

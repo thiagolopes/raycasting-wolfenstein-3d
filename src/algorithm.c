@@ -1,4 +1,5 @@
 #include "algorithm.h"
+#include <stdlib.h>
 
 void ray_setup_step(Point2h pos, Point2h dir, Ray* ray) {
     // is left
@@ -59,6 +60,18 @@ Ray ray_setup(Point2h pos, Point2h ray_dir) {
     }
 
     return ray;
+};
+
+inline double ray_get_dist(Ray* ray) {
+    // last hit on x coordinatew
+    if (ray->side == NS) {
+        return point2h_sub(ray->side_dist, ray->delta_dist).x;
+    }
+    // last hit on y coordinatew
+    else {
+        return point2h_sub(ray->side_dist, ray->delta_dist).y;
+    }
+    exit(EXIT_FAILURE); // do not reach here;
 };
 
 double height_shadow(double ray_dist){

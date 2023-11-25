@@ -31,16 +31,20 @@ typedef struct {
 } Player_t;
 
 typedef struct {
-    Point2h pos; // start position
-    Point2h dir; // initial direction vector
+    Point2h pos;   // start position
+    Point2h dir;   // initial direction vector
     Point2h plane; // the 2d raycaster version of camera plane
-} Player;
-Player PLAYER = {{22.0, 12}, {-1.0, 0.0}, {0.0, 0.66}};
+    size_t  width;
+} Camera;
 
-//x-coordinate in camera space
-double camera_position(size_t x, size_t width){
-    double position = 2 * x / (double)width - 1;
-    return position;
+Camera PLAYER = {{22.0, 12}, {-1.0, 0.0}, {0.0, 0.66}};
+
+Point2h camera_plane_axis(Camera camera, size_t x) {
+    // x coordinate in camera space (a vector)
+    double position = 2 * x / (double)camera.width - 1;
+    // calculate ray position and direction
+    Point2h ray_dir = {camera.dir.x + camera.plane.x * position, camera.dir.y + camera.plane.y * position};
+    return ray_dir;
 }
 
 typedef struct {
@@ -58,26 +62,26 @@ typedef struct {
 
 void update_player(Keys* keys, Player_t* player, Grid grid, float deltatime) {
     double move_speed = ONE_RAD / 4 * deltatime;
-    double rot_speed = ONE_RAD / 4 * deltatime;
+    double rot_speed  = ONE_RAD / 4 * deltatime;
 
     if (keys->d == 1) {
         double old_dir_x = PLAYER.dir.x;
-        PLAYER.dir.x = PLAYER.dir.x * cos(-rot_speed) - PLAYER.dir.y * sin(-rot_speed);
-        PLAYER.dir.y = old_dir_x * sin(-rot_speed) + PLAYER.dir.y * cos(-rot_speed);
+        PLAYER.dir.x     = PLAYER.dir.x * cos(-rot_speed) - PLAYER.dir.y * sin(-rot_speed);
+        PLAYER.dir.y     = old_dir_x * sin(-rot_speed) + PLAYER.dir.y * cos(-rot_speed);
 
         double old_plane_x = PLAYER.plane.x;
-        PLAYER.plane.x = PLAYER.plane.x * cos(-rot_speed) - PLAYER.plane.y * sin(-rot_speed);
-        PLAYER.plane.y = old_plane_x * sin(-rot_speed) + PLAYER.plane.y * cos(-rot_speed);
+        PLAYER.plane.x     = PLAYER.plane.x * cos(-rot_speed) - PLAYER.plane.y * sin(-rot_speed);
+        PLAYER.plane.y     = old_plane_x * sin(-rot_speed) + PLAYER.plane.y * cos(-rot_speed);
     }
     if (keys->a == 1) {
         double old_dir_x = PLAYER.dir.x;
-        //TODO this math is a matrix rotation; move to math
+        // TODO this math is a matrix rotation; move to math
         PLAYER.dir.x = PLAYER.dir.x * cos(rot_speed) - PLAYER.dir.y * sin(rot_speed);
         PLAYER.dir.y = old_dir_x * sin(rot_speed) + PLAYER.dir.y * cos(rot_speed);
 
         double old_plane_x = PLAYER.plane.x;
-        PLAYER.plane.x = PLAYER.plane.x * cos(rot_speed) - PLAYER.plane.y * sin(rot_speed);
-        PLAYER.plane.y = old_plane_x * sin(rot_speed) + PLAYER.plane.y * cos(rot_speed);
+        PLAYER.plane.x     = PLAYER.plane.x * cos(rot_speed) - PLAYER.plane.y * sin(rot_speed);
+        PLAYER.plane.y     = old_plane_x * sin(rot_speed) + PLAYER.plane.y * cos(rot_speed);
     }
     if (keys->w == 1) {
         PLAYER.pos.x += PLAYER.dir.x * move_speed;
@@ -146,10 +150,8 @@ void handle_mouse_pressed_down(int button, float x, float y, AppGame* App) {
     }
 }
 
-
-#define w 1920
-#define h 1080
-void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos) {
+void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos, int height) {
+    int h = height;
     // Calculate height of line to draw on screen
     int wall_height = (int)(h / ray_dist);
     // calculate where the line start and ends, talken h as center of hall;
@@ -157,47 +159,39 @@ void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos) {
     int draw_end   = wall_height / 2 + h / 2;
 
     double text_x;
-    if (side == NS)
+    if (side == NS) {
         text_x = 1 - (PLAYER.pos.y + ray_dist * ray_dir.y);
-    else
+    } else {
         text_x = 1 - (PLAYER.pos.x + ray_dist * ray_dir.x);
+    }
     text_x -= floor(text_x);
 
     double color = height_shadow(ray_dist);
     draw_line_vertical(x_pos, draw_start, draw_end, cel.raw_value, text_x, (Color){color, color, color});
 };
 
-void new_3d_render(AppGame* app, Grid* map){
-    Player r = PLAYER;
+void new_3d_render(int w, int h, Grid* map) {
+    Camera r = PLAYER;
 
-    for(size_t x = 0; x < w; x++){
-        double camera_pos = camera_position(x, w);
-        //calculate ray position and direction
-        Point2h ray_dir = {r.dir.x + r.plane.x * camera_pos, r.dir.y + r.plane.y * camera_pos};
-        //lenght of the ray while steps;
-        double ray_dist;
+    // cast a ray for every camera position
+    for (size_t x = 0; x < r.width; x++) {
+        Point2h ray_dir = camera_plane_axis(r, x);
         // raycaster
         Ray ray = ray_setup(PLAYER.pos, ray_dir);
         // was there a wall hit?
         bool hit = false;
-        while(!hit){
+        while (!hit) {
             ray_next_step(&ray);
-            if (grid_index_valid(*map, ray.map_grid.x, ray.map_grid.y)){
+            if (grid_index_valid(*map, ray.map_grid.x, ray.map_grid.y)) {
                 if (map->cels[ray.map_grid.x][ray.map_grid.y].raw_value != 0) {
                     hit = true;
                 }
             }
         }
-
         // camera plane dist
-        if(ray.side == NS){
-            ray_dist = (ray.side_dist.x - ray.delta_dist.x);
-        }
-        else{
-            ray_dist = (ray.side_dist.y - ray.delta_dist.y);
-        }
+        double ray_dist = ray_get_dist(&ray);
         // move to draw_ray
-        draw_ray(ray_dist, ray.side, ray_dir, map->cels[ray.map_grid.x][ray.map_grid.y], x);
+        draw_ray(ray_dist, ray.side, ray_dir, map->cels[ray.map_grid.x][ray.map_grid.y], x, h);
     }
 }
 
@@ -236,6 +230,8 @@ int main(int argc, char* args[]) {
     Mouse  mouse         = {0};
     window_vsync(false);
     window_capture_cursor(true);
+
+    PLAYER.width = window_deamon.width;
 
     Texture  t1          = texture_new("textures/doom/1.png", false);
     Texture  t2          = texture_new("textures/doom/2.png", false);
@@ -296,22 +292,22 @@ int main(int argc, char* args[]) {
             }
         }
 
-            /* update here */
-            update_player(&keys_map, &App.Player, grid, delta);
+        /* update here */
+        update_player(&keys_map, &App.Player, grid, delta);
 
-            /* draw here */
-            draw_3d_view_floor(&App, &window_deamon);
-            new_3d_render(&App, &grid);
+        /* draw here */
+        draw_3d_view_floor(&App, &window_deamon);
+        // all screen for now
+        new_3d_render(window_deamon.width, window_deamon.height, &grid);
+        {
+            texture_bind(t9);
+            draw_rectf((Rectanglef){30, 30, 200, 200}, WHITE);
+            texture_unbind();
+        }
+        window_finish_frame(&window_deamon);
 
-            {
-                texture_bind(t9);
-                draw_rectf((Rectanglef){30, 30, 200, 200}, WHITE);
-                texture_unbind();
-            }
-            window_finish_frame(&window_deamon);
-
-            last_time = current_time;
-            ++frame_counter;
+        last_time = current_time;
+        ++frame_counter;
 
         if (delta > frame_delta) {
             // here in capped by fps
