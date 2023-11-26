@@ -23,12 +23,12 @@ Point2f point2f_sub(Point2f a, Point2f b) {
     return p;
 }
 
-Point2h point2h_sub(Point2h a, Point2h b){
+Point2h point2h_sub(Point2h a, Point2h b) {
     Point2h p = {a.x - b.x, a.y - b.y};
     return p;
 }
 
-int point2i_len(Point2i point){
+int point2i_len(Point2i point) {
     return sqrt(point.x * point.x + point.y * point.y);
 }
 
@@ -40,3 +40,9 @@ float to_radf(float degree) {
     return degree * ONE_RAD;
 }
 
+Point2h point2h_rotate(Point2h p, double angle) {
+    Point2h r;
+    r.x = p.x * cos(angle) - p.y * sin(angle);
+    r.y = p.x * sin(angle) + p.y * cos(angle);
+    return r;
+}
