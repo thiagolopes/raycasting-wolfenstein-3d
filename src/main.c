@@ -23,6 +23,8 @@
 
 #define MOUSE_VELOCITY 0.002909
 bool SHADOWS;
+int FPS;
+bool RUN;
 
 typedef struct {
     // start position
@@ -46,17 +48,6 @@ Point2h camera_get_plane_dir(Camera camera, size_t x) {
     Point2h ray_dir = {camera.dir.x + camera.plane.x * position, camera.dir.y + camera.plane.y * position};
     return ray_dir;
 }
-
-typedef struct {
-    int      run_status;
-    /* move to map */
-    int map_cols;
-    int map_rows;
-    int map_height;
-    int fps;
-    int map_tile[24][24];
-    /* engine */
-} AppGame;
 
 void update_player(Keys* keys, Grid grid, float deltatime) {
     double move_speed = ONE_RAD / 4 * deltatime;
@@ -85,10 +76,10 @@ void update_player(Keys* keys, Grid grid, float deltatime) {
     }
 }
 
-static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_action) {
+static void handle_key(SDL_Keysym keysym, Keys* keys, int button_action) {
     switch (keysym.sym) {
         case SDLK_ESCAPE:
-            App->run_status = 0;
+            RUN = false;
             break;
         case SDLK_a:
             keys->a = button_action;
@@ -119,7 +110,7 @@ static void handle_key(SDL_Keysym keysym, AppGame* App, Keys* keys, int button_a
 
 void draw_aim(Window* window) {}
 
-void handle_mouse_pressed_up(int button, float x, float y, AppGame* App) {
+void handle_mouse_pressed_up(int button, float x, float y) {
     switch (button) {
         case SDL_BUTTON_LEFT:
             break;
@@ -128,7 +119,7 @@ void handle_mouse_pressed_up(int button, float x, float y, AppGame* App) {
     }
 }
 
-void handle_mouse_pressed_down(int button, float x, float y, AppGame* App) {
+void handle_mouse_pressed_down(int button, float x, float y) {
     switch (button) {
         case SDL_BUTTON_LEFT:
             break;
@@ -186,14 +177,14 @@ void render_fps(int h, Grid* map) {
     }
 }
 
-void handle_mouse_motion(AppGame* App, SDL_Event* event) {
+void handle_mouse_motion(SDL_Event* event) {
     if (event->motion.state == (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK)) {
-        handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y, App);
-        handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y, App);
+        handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y);
+        handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y);
     } else if (event->motion.state == SDL_BUTTON_LMASK) {
-        handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y, App);
+        handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y);
     } else if (event->motion.state == SDL_BUTTON_RMASK) {
-        handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y, App);
+        handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y);
     }
 
     switch (event->type) {
@@ -207,18 +198,19 @@ void handle_mouse_motion(AppGame* App, SDL_Event* event) {
 // main
 int main(int argc, char* args[]) {
     srand(time(NULL));
-    AppGame App = {1, 24, 24, 32, 144, 0};
-
     char title_format[] = "Simple Wolfenstein Engine - FPS %i";
     char title[256]     = "Simple Wolfenstein Engine";
 
     SHADOWS = true;
+    FPS = 144;
+    RUN = true;
 
-    /* Window window_deamon = window_wake_up(title, 2560, 1440, false); */
-    Window window_deamon = window_wake_up(title, 1920, 1080, false);
-    Keys   keys_map      = {0};
-    Mouse  mouse         = {0};
-    window_vsync(true);
+    Window window_deamon = window_wake_up(title, 2560, 1440, false);
+    /* Window window_deamon = window_wake_up(title, 1920, 1080, false); */
+
+    Keys  keys_map = {0};
+    Mouse mouse    = {0};
+    window_vsync(false);
     window_capture_cursor(true);
 
     PLAYER.width = window_deamon.width;
@@ -238,18 +230,14 @@ int main(int argc, char* args[]) {
     Texture* textures[9] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9};
 
     Grid grid = grid_load("maps/map_01");
-    for (int x = 0; x < App.map_cols; x++) {
-        for (int y = 0; y < App.map_rows; y++) {
-            App.map_tile[x][y] = grid.cels[x][y].raw_value;
-        }
-    }
+
     const double freq_ms       = SDL_GetPerformanceFrequency();
     Uint64       last_time     = SDL_GetPerformanceCounter();
     unsigned int frame_counter = 0;
     double       frame_timer   = last_time;
-    const double frame_delta   = 1000.0 / App.fps;
+    const double frame_delta   = 1000.0 / FPS;
 
-    while (App.run_status) {
+    while (RUN) {
         window_start_frame();
         Uint64 current_time = SDL_GetPerformanceCounter();
         double delta        = (current_time - last_time) / freq_ms * 1000.0;
@@ -264,22 +252,22 @@ int main(int argc, char* args[]) {
         while (SDL_PollEvent(&event) != 0) {
             switch (event.type) {
                 case SDL_QUIT:
-                    App.run_status = 0;
+                    RUN = false;
                     break;
                 case SDL_KEYDOWN:
-                    handle_key(event.key.keysym, &App, &keys_map, 1);
+                    handle_key(event.key.keysym, &keys_map, 1);
                     break;
                 case SDL_KEYUP:
-                    handle_key(event.key.keysym, &App, &keys_map, 0);
+                    handle_key(event.key.keysym, &keys_map, 0);
                     break;
                 case SDL_MOUSEMOTION:
-                    handle_mouse_motion(&App, &event);
+                    handle_mouse_motion(&event);
                     break;
                 case SDL_MOUSEBUTTONDOWN:
-                    handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y, &App);
+                    handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y);
                     break;
                 case SDL_MOUSEBUTTONUP:
-                    handle_mouse_pressed_up(event.button.button, event.button.x, event.button.y, &App);
+                    handle_mouse_pressed_up(event.button.button, event.button.x, event.button.y);
                     break;
             }
         }
