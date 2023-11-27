@@ -25,10 +25,16 @@
 bool SHADOWS;
 
 typedef struct {
-    Point2h pos;   // start position
-    Point2h dir;   // initial direction vector
-    Point2h plane; // the 2d raycaster version of camera plane
-    size_t  width;
+    // start position
+    Point2h pos;
+    // initial direction vector
+    Point2h dir;
+    // the 2d raycaster version of camera plane
+    Point2h plane;
+    // total render width (px)
+    size_t width;
+    // total render height (px)
+    size_t height;
 } Camera;
 
 Camera PLAYER = {{22.0, 12}, {-1.0, 0.0}, {0.0, 0.66}};
@@ -216,6 +222,7 @@ int main(int argc, char* args[]) {
     window_capture_cursor(true);
 
     PLAYER.width = window_deamon.width;
+    PLAYER.height = window_deamon.height;
 
     Texture t1 = texture_new("textures/doom/1.png", false);
     Texture t2 = texture_new("textures/doom/2.png", false);
