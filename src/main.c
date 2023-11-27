@@ -25,12 +25,6 @@
 bool SHADOWS;
 
 typedef struct {
-    double angle, direction_x, direction_y;
-    float  x, y;
-    int    pitch_view, fov;
-} Player_t;
-
-typedef struct {
     Point2h pos;   // start position
     Point2h dir;   // initial direction vector
     Point2h plane; // the 2d raycaster version of camera plane
@@ -39,7 +33,7 @@ typedef struct {
 
 Camera PLAYER = {{22.0, 12}, {-1.0, 0.0}, {0.0, 0.66}};
 
-Point2h camera_plane_axis(Camera camera, size_t x) {
+Point2h camera_get_plane_dir(Camera camera, size_t x) {
     // x coordinate in camera space (a vector)
     double position = 2 * x / (double)camera.width - 1;
     // calculate ray position and direction
@@ -49,8 +43,6 @@ Point2h camera_plane_axis(Camera camera, size_t x) {
 
 typedef struct {
     int      run_status;
-    Player_t Player;
-
     /* move to map */
     int map_cols;
     int map_rows;
@@ -60,7 +52,7 @@ typedef struct {
     /* engine */
 } AppGame;
 
-void update_player(Keys* keys, Player_t* player, Grid grid, float deltatime) {
+void update_player(Keys* keys, Grid grid, float deltatime) {
     double move_speed = ONE_RAD / 4 * deltatime;
     double rot_speed  = ONE_RAD / 4 * deltatime;
 
@@ -162,12 +154,12 @@ void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos, in
     draw_line_vertical(x_pos, draw_start, draw_end, cel.raw_value, text_x, (Color){color, color, color});
 };
 
-void new_3d_render(int h, Grid* map) {
+void render_fps(int h, Grid* map) {
     Camera r = PLAYER;
 
     // cast a ray for every camera position
     for (size_t x = 0; x < r.width; x++) {
-        Point2h ray_dir = camera_plane_axis(r, x);
+        Point2h ray_dir = camera_get_plane_dir(r, x);
         // raycaster
         Ray ray = ray_setup(PLAYER.pos, ray_dir);
         // was there a wall hit?
@@ -182,15 +174,10 @@ void new_3d_render(int h, Grid* map) {
         }
         // camera plane dist
         double ray_dist = ray_get_dist(&ray);
+
         // move to draw_ray
         draw_ray(ray_dist, ray.side, ray_dir, map->cels[ray.map_grid.x][ray.map_grid.y], x, h);
     }
-}
-
-void draw_3d_view_floor(AppGame* App, Window* win) {
-    float      floor_start = win->height / 2;
-    Rectanglef floor       = {0, floor_start, (float)win->width, (float)win->height + App->Player.pitch_view};
-    draw_rectf_gradient(floor, BLACK, DARKGRAY);
 }
 
 void handle_mouse_motion(AppGame* App, SDL_Event* event) {
@@ -214,7 +201,7 @@ void handle_mouse_motion(AppGame* App, SDL_Event* event) {
 // main
 int main(int argc, char* args[]) {
     srand(time(NULL));
-    AppGame App = {1, {0, cos(TAU), -sin(TAU), 50, 50, 0, 70}, 24, 24, 32, 144, 0};
+    AppGame App = {1, 24, 24, 32, 144, 0};
 
     char title_format[] = "Simple Wolfenstein Engine - FPS %i";
     char title[256]     = "Simple Wolfenstein Engine";
@@ -291,12 +278,10 @@ int main(int argc, char* args[]) {
         }
 
         /* update here */
-        update_player(&keys_map, &App.Player, grid, delta);
+        update_player(&keys_map, grid, delta);
 
         /* draw here */
-        draw_3d_view_floor(&App, &window_deamon);
-        // all screen for now
-        new_3d_render(window_deamon.height, &grid);
+        render_fps(window_deamon.height, &grid);
         {
             texture_bind(t9);
             draw_rectf((Rectanglef){30, 30, 200, 200}, WHITE);

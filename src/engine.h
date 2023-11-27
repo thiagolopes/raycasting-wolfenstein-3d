@@ -8,22 +8,22 @@
 
 typedef struct Window Window;
 struct Window {
-    SDL_Window* sdl_window_id;
+    SDL_Window*   sdl_window_id;
     SDL_GLContext sdl_gl_context_id;
-    char* name;
-    int width;
-    int height;
-    bool fullscreen;
+    char*         name;
+    int           width;
+    int           height;
+    bool          fullscreen;
 };
 
 typedef struct {
 } Renderer;
 
-typedef struct{
+typedef struct {
     int a, w, s, d, shift, ctrl, j, k;
 } Keys;
 
-typedef struct{
+typedef struct {
     float x, y, xref, yref, button_r, button_l;
 } Mouse;
 
@@ -39,15 +39,15 @@ typedef struct {
     float y;
     float width;
     float height;
-}Rectanglef;
+} Rectanglef;
 
 Window window_wake_up(char* name, int height, int width, bool fullscreen);
-void window_vsync(bool flag);
-void window_fullscreen(Window* window, bool flag);
-void window_capture_cursor(bool flag);
-void window_start_frame();
-void window_finish_frame(Window *window);
-void window_shutdown(Window *window);
+void   window_vsync(bool flag);
+void   window_fullscreen(Window* window, bool flag);
+void   window_capture_cursor(bool flag);
+void   window_start_frame();
+void   window_finish_frame(Window* window);
+void   window_shutdown(Window* window);
 
 /* primitive draws calls */
 void draw_rectf(Rectanglef rect, Color color);

@@ -7,6 +7,7 @@ Demo video: https://www.youtube.com/watch?v=c_aWcXAWfFA
 - [Super Fast Ray Casting in Tiled Worlds using DDA](https://www.youtube.com/watch?v=NbSee-XM7WA&t=1018s)
 - [OpenGL API Documentation](https://docs.gl)
 - [Make Your Own Raycaster Part 1](https://www.youtube.com/watch?v=gYRrGTC7GtA) 
+- [Rotation Matrix](https://en.wikipedia.org/wiki/Rotation_matrix)
 
 ## How build
 ```
