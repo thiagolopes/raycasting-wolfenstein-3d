@@ -154,3 +154,11 @@ void window_start_frame() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
+
+Point2h camera_get_plane_dir(Camera camera, size_t x) {
+    // x coordinate in camera space (a vector)
+    double position = 2 * x / (double)camera.width - 1;
+    // calculate ray position and direction
+    Point2h ray_dir = {camera.dir.x + camera.plane.x * position, camera.dir.y + camera.plane.y * position};
+    return ray_dir;
+}

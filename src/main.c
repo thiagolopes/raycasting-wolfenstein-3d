@@ -15,6 +15,7 @@
 #include <math.h>
 
 // internal
+#include "math.h"
 #include "engine.h"
 #include "texture.h"
 #include "colors.h"
@@ -26,48 +27,25 @@ bool SHADOWS;
 int FPS;
 bool RUN;
 
-typedef struct {
-    // start position
-    Point2h pos;
-    // initial direction vector
-    Point2h dir;
-    // the 2d raycaster version of camera plane
-    Point2h plane;
-    // total render width (px)
-    size_t width;
-    // total render height (px)
-    size_t height;
-} Camera;
-
-Camera PLAYER = {{22.0, 12}, {-1.0, 0.0}, {0.0, 0.66}};
-
-Point2h camera_get_plane_dir(Camera camera, size_t x) {
-    // x coordinate in camera space (a vector)
-    double position = 2 * x / (double)camera.width - 1;
-    // calculate ray position and direction
-    Point2h ray_dir = {camera.dir.x + camera.plane.x * position, camera.dir.y + camera.plane.y * position};
-    return ray_dir;
-}
-
-void update_player(Keys* keys, Grid grid, float deltatime) {
+void update_player(Camera* camera, Keys* keys, Grid grid, float deltatime) {
     double move_speed = ONE_RAD / 4 * deltatime;
     double rot_speed  = ONE_RAD / 4 * deltatime;
 
     if (keys->d == 1) {
-        PLAYER.pos.x += PLAYER.dir.y * move_speed;
-        PLAYER.pos.y -= PLAYER.dir.x * move_speed;
+        camera->pos.x += camera->dir.y * move_speed;
+        camera->pos.y -= camera->dir.x * move_speed;
     }
     if (keys->a == 1) {
-        PLAYER.pos.x -= PLAYER.dir.y * move_speed;
-        PLAYER.pos.y += PLAYER.dir.x * move_speed;
+        camera->pos.x -= camera->dir.y * move_speed;
+        camera->pos.y += camera->dir.x * move_speed;
     }
     if (keys->w == 1) {
-        PLAYER.pos.x += PLAYER.dir.x * move_speed;
-        PLAYER.pos.y += PLAYER.dir.y * move_speed;
+        camera->pos.x += camera->dir.x * move_speed;
+        camera->pos.y += camera->dir.y * move_speed;
     }
     if (keys->s == 1) {
-        PLAYER.pos.x -= PLAYER.dir.x * move_speed;
-        PLAYER.pos.y -= PLAYER.dir.y * move_speed;
+        camera->pos.x -= camera->dir.x * move_speed;
+        camera->pos.y -= camera->dir.y * move_speed;
     }
     if (keys->j == 1) {
     }
@@ -128,7 +106,7 @@ void handle_mouse_pressed_down(int button, float x, float y) {
     }
 }
 
-void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos, int height) {
+void draw_ray(Point2h pos, double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos, int height) {
     int h = height;
     // Calculate height of line to draw on screen
     int wall_height = (int)(h / ray_dist);
@@ -138,9 +116,9 @@ void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos, in
 
     double text_x;
     if (side == NS) {
-        text_x = 1 - (PLAYER.pos.y + ray_dist * ray_dir.y);
+        text_x = 1 - (pos.y + ray_dist * ray_dir.y);
     } else {
-        text_x = 1 - (PLAYER.pos.x + ray_dist * ray_dir.x);
+        text_x = 1 - (pos.x + ray_dist * ray_dir.x);
     }
     text_x -= floor(text_x);
 
@@ -151,14 +129,12 @@ void draw_ray(double ray_dist, int side, Point2h ray_dir, Cel cel, int x_pos, in
     draw_line_vertical(x_pos, draw_start, draw_end, cel.raw_value, text_x, (Color){color, color, color});
 };
 
-void render_fps(int h, Grid* map) {
-    Camera r = PLAYER;
-
+void render_camera(Camera r,int h, Grid* map) {
     // cast a ray for every camera position
     for (size_t x = 0; x < r.width; x++) {
         Point2h ray_dir = camera_get_plane_dir(r, x);
         // raycaster
-        Ray ray = ray_setup(PLAYER.pos, ray_dir);
+        Ray ray = ray_setup(r.pos, ray_dir);
         // was there a wall hit?
         bool hit = false;
         while (!hit) {
@@ -173,11 +149,11 @@ void render_fps(int h, Grid* map) {
         double ray_dist = ray_get_dist(&ray);
 
         // move to draw_ray
-        draw_ray(ray_dist, ray.side, ray_dir, map->cels[ray.map_grid.x][ray.map_grid.y], x, h);
+        draw_ray(r.pos, ray_dist, ray.side, ray_dir, map->cels[ray.map_grid.x][ray.map_grid.y], x, h);
     }
 }
 
-void handle_mouse_motion(SDL_Event* event) {
+void handle_mouse_motion(Camera* camera, SDL_Event* event) {
     if (event->motion.state == (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK)) {
         handle_mouse_pressed_down(SDL_BUTTON_LEFT, event->button.x, event->button.y);
         handle_mouse_pressed_down(SDL_BUTTON_RIGHT, event->button.x, event->button.y);
@@ -189,8 +165,8 @@ void handle_mouse_motion(SDL_Event* event) {
 
     switch (event->type) {
         case SDL_MOUSEMOTION:
-            PLAYER.dir   = point2h_rotate(PLAYER.dir, -event->motion.xrel * MOUSE_VELOCITY);
-            PLAYER.plane = point2h_rotate(PLAYER.plane, -event->motion.xrel * MOUSE_VELOCITY);
+            camera->dir   = point2h_rotate(camera->dir, -event->motion.xrel * MOUSE_VELOCITY);
+            camera->plane = point2h_rotate(camera->plane, -event->motion.xrel * MOUSE_VELOCITY);
             break;
     }
 }
@@ -213,8 +189,9 @@ int main(int argc, char* args[]) {
     window_vsync(false);
     window_capture_cursor(true);
 
-    PLAYER.width = window_deamon.width;
-    PLAYER.height = window_deamon.height;
+    Camera player = {{22.0, 12}, {-1.0, 0.0}, {0.0, 0.66}};
+    player.width = window_deamon.width;
+    player.height = window_deamon.height;
 
     Texture t1 = texture_new("textures/doom/1.png", false);
     Texture t2 = texture_new("textures/doom/2.png", false);
@@ -261,7 +238,7 @@ int main(int argc, char* args[]) {
                     handle_key(event.key.keysym, &keys_map, 0);
                     break;
                 case SDL_MOUSEMOTION:
-                    handle_mouse_motion(&event);
+                    handle_mouse_motion(&player, &event);
                     break;
                 case SDL_MOUSEBUTTONDOWN:
                     handle_mouse_pressed_down(event.button.button, event.button.x, event.button.y);
@@ -273,10 +250,10 @@ int main(int argc, char* args[]) {
         }
 
         /* update here */
-        update_player(&keys_map, grid, delta);
+        update_player(&player, &keys_map, grid, delta);
 
         /* draw here */
-        render_fps(window_deamon.height, &grid);
+        render_camera(player, window_deamon.height, &grid);
         {
             texture_bind(t9);
             draw_rectf((Rectanglef){30, 30, 200, 200}, WHITE);
