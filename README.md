@@ -1,5 +1,6 @@
 # Raycasting in C and OpenGL 
-Demo video: https://www.youtube.com/watch?v=c_aWcXAWfFA
+Demo video v2: https://www.youtube.com/watch?v=c_aWcXAWfFA
+Demo video v3: https://www.youtube.com/watch?v=EX0sbZtAAKE
 
 ## References
 - [LODEV raycasting algorithm](https://lodev.org/cgtutor/raycasting.html)
